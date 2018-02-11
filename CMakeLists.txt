@@ -24,6 +24,7 @@ SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 set(SOURCE_FILES
         src/main.cpp
         src/env.cpp
+        src/chunk.cpp
         third-party/glad/glad.c)
 
 add_executable(ft_vox ${SOURCE_FILES})

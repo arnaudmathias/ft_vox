@@ -1,8 +1,10 @@
 #include <list>
+#include "chunk.hpp"
 #include "env.hpp"
 
 int main(int argc, char **argv) {
   Env env(1280, 720);
+  ChunkManager chunkManager;
 
   while (!glfwWindowShouldClose(env.window)) {
     env.update();
