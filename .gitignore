@@ -30,3 +30,42 @@
 *.exe
 *.out
 *.app
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+.com.apple.*
+*.dSYM
+Thumbs.db
+
+ft_vox
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+# User-specific files (MonoDevelop/Xamarin Studio)
+*.userprefs
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+.vs/
+*.vcxproj*
+*.sln
+
+
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+cmake_install.cmake
+
+tags
+Makefile
