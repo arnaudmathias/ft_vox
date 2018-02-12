@@ -25,6 +25,8 @@ set(SOURCE_FILES
         src/main.cpp
         src/env.cpp
         src/chunk.cpp
+        src/shader.cpp
+        src/renderer.cpp
         third-party/glad/glad.c)
 
 add_executable(ft_vox ${SOURCE_FILES})

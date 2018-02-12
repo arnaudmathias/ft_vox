@@ -5,6 +5,7 @@ std::vector<glm::vec3> plane_vertices = {
     {1.0f, -1.0f, 0.0f}, {-1.0f, -1.0f, 0.0f}, {-1.0f, 1.0f, 0.0f}};
 
 Chunk::Chunk(void) {
+  _renderAttrib.vao = nullptr;
   for (int y = 0; y < 256; y++) {
     for (int x = 0; x < 16; x++) {
       for (int z = 0; z < 16; z++) {
@@ -16,11 +17,15 @@ Chunk::Chunk(void) {
 
 Chunk::Chunk(Chunk const& src) { *this = src; }
 
-Chunk::~Chunk(void) {}
+Chunk::~Chunk(void) {
+  if (_renderAttrib.vao != nullptr) delete _renderAttrib.vao;
+}
 
 Chunk& Chunk::operator=(Chunk const& rhs) {
   if (this != &rhs) {
     this->pos = rhs.pos;
+    std::memcpy(this->data, rhs.data, sizeof(this->data));
+    this->_renderAttrib.vao = rhs._renderAttrib.vao;
   }
   return (*this);
 }
@@ -29,7 +34,7 @@ void Chunk::mesh() {
   std::vector<glm::vec3> vertices;
   for (int y = 0; y < CHUNK_SIZE; y++) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
-      for (int z = 0; z < CHUNK_SIZE / 2; z++) {
+      for (int z = 0; z < CHUNK_SIZE; z++) {
         Block front_block = get_block({x, y, z});
         if (front_block.material != Material::Air) {
           vertices.insert(vertices.end(), plane_vertices.begin(),
@@ -39,8 +44,12 @@ void Chunk::mesh() {
       }
     }
   }
+  if (this->_renderAttrib.vao != nullptr) delete this->_renderAttrib.vao;
+  this->_renderAttrib.vao = new VAO(vertices);
   std::cout << "Mesher: " << vertices.size() << " vertices" << std::endl;
 };
+
+const RenderAttrib& Chunk::getRenderAttrib() { return (this->_renderAttrib); }
 
 inline Block Chunk::get_block(glm::ivec3 index) {
   return (this->data[index.y * CHUNK_SIZE * CHUNK_SIZE + index.x * CHUNK_SIZE +
@@ -52,16 +61,16 @@ inline void Chunk::set_block(Block block, glm::ivec3 index) {
              index.z] = block;
 }
 
-ChunkManager::ChunkManager(void) : _renderDistance(3) {
+ChunkManager::ChunkManager(void) : _renderDistance(0) {
   glm::ivec2 pos(0);
   for (int x = -this->_renderDistance; x <= this->_renderDistance; x++) {
     for (int z = -this->_renderDistance; z <= this->_renderDistance; z++) {
       glm::ivec2 chunk_pos(pos.x + x * CHUNK_SIZE, pos.y + z * CHUNK_SIZE);
       auto chunk = _chunks.find(chunk_pos);
       if (chunk == _chunks.end()) {
-        Chunk newChunk;
-        newChunk.mesh();
-        _chunks.insert(std::make_pair(chunk_pos, newChunk));
+        _chunks.emplace(chunk_pos, Chunk());
+        auto newchunk = _chunks.find(chunk_pos);
+        newchunk->second.mesh();
       }
     }
   }
@@ -86,6 +95,14 @@ void ChunkManager::update(glm::vec3 player_pos) {
     for (int z = -this->_renderDistance; z < this->_renderDistance; z++) {
       // chunks.find
     }
+  }
+}
+
+void ChunkManager::setRenderAttributes(Renderer& renderer) {
+  auto chunk_it = _chunks.begin();
+  while (chunk_it != _chunks.end()) {
+    renderer.addRenderAttrib(chunk_it->second.getRenderAttrib());
+    chunk_it++;
   }
 }
 

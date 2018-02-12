@@ -8,6 +8,7 @@
 #include <map>
 #include <unordered_map>
 #include <vector>
+#include "renderer.hpp"
 
 struct ivec2Comparator {
   size_t operator()(const glm::ivec2& k) const {
@@ -42,6 +43,10 @@ class Chunk {
 
   inline Block get_block(glm::ivec3 index);
   inline void set_block(Block block, glm::ivec3 index);
+  const RenderAttrib& getRenderAttrib();
+
+ private:
+  RenderAttrib _renderAttrib;
 };
 
 class ChunkManager {
@@ -52,6 +57,7 @@ class ChunkManager {
   ChunkManager& operator=(ChunkManager const& rhs);
 
   void update(glm::vec3 player_pos);
+  void setRenderAttributes(Renderer& renderer);
   void setRenderDistance(unsigned char renderDistance);
 
  private:
