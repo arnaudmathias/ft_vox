@@ -21,7 +21,11 @@ Renderer::Renderer(void) {
       new Shader(ShaderType::NORMAL, "shaders/vox.vert", "shaders/vox.frag");
 }
 
-Renderer::Renderer(int width, int height) : _width(width), _height(height) {
+Renderer::Renderer(int width, int height)
+    : _width(width),
+      _height(height),
+      _cubeMapVao(nullptr),
+      _cubeMapShader(nullptr) {
   _shader =
       new Shader(ShaderType::NORMAL, "shaders/vox.vert", "shaders/vox.frag");
 }

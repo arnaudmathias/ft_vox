@@ -62,6 +62,12 @@ struct RenderAttrib {
   Texture* iChannel1;
   Texture* iChannel2;
   Texture* iChannel3;
+  RenderAttrib()
+      : vao(nullptr),
+        iChannel0(nullptr),
+        iChannel1(nullptr),
+        iChannel2(nullptr),
+        iChannel3(nullptr){};
 
   bool operator<(const struct RenderAttrib& rhs) const;
 };
