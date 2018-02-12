@@ -21,6 +21,8 @@ struct ivec2Comparator {
   }
 };
 
+enum class BlockSide { Front, Back, Left, Right, Bottom, Up };
+
 enum class Material : unsigned char { Air, Dirt, Sand };
 
 struct Block {

@@ -1,15 +1,35 @@
 #include "chunk.hpp"
 
-std::vector<glm::vec3> plane_vertices = {
-    {-1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f},   {1.0f, -1.0f, 0.0f},
-    {1.0f, -1.0f, 0.0f}, {-1.0f, -1.0f, 0.0f}, {-1.0f, 1.0f, 0.0f}};
+const std::vector<glm::vec3> cube_front = {
+    {-0.5f, 0.5f, -0.5f}, {0.5f, 0.5f, -0.5f},   {0.5f, -0.5f, -0.5f},
+    {0.5f, -0.5f, -0.5f}, {-0.5f, -0.5f, -0.5f}, {-0.5f, 0.5f, -0.5f}};
+
+const std::vector<glm::vec3> cube_back = {
+    {-0.5f, 0.5f, 0.5f}, {0.5f, 0.5f, 0.5f},   {0.5f, -0.5f, 0.5f},
+    {0.5f, -0.5f, 0.5f}, {-0.5f, -0.5f, 0.5f}, {-0.5f, 0.5f, 0.5f}};
+
+const std::vector<glm::vec3> cube_left = {
+    {0.5f, -0.5f, 0.5f}, {0.5f, 0.5f, 0.5f},   {0.5f, 0.5f, -0.5f},
+    {0.5f, 0.5f, -0.5f}, {0.5f, -0.5f, -0.5f}, {0.5f, -0.5f, 0.5f}};
+
+const std::vector<glm::vec3> cube_right = {
+    {-0.5f, -0.5f, 0.5f}, {-0.5f, 0.5f, 0.5f},   {-0.5f, 0.5f, -0.5f},
+    {-0.5f, 0.5f, -0.5f}, {-0.5f, -0.5f, -0.5f}, {-0.5f, -0.5f, 0.5f}};
+
+const std::vector<glm::vec3> cube_bottom = {
+    {-0.5f, -0.5f, 0.5f}, {0.5f, -0.5f, 0.5f},   {0.5f, -0.5f, -0.5f},
+    {0.5f, -0.5f, -0.5f}, {-0.5f, -0.5f, -0.5f}, {-0.5f, -0.5f, 0.5f}};
+
+const std::vector<glm::vec3> cube_up = {
+    {-0.5f, 0.5f, 0.5f}, {0.5f, 0.5f, 0.5f},   {0.5f, 0.5f, -0.5f},
+    {0.5f, 0.5f, -0.5f}, {-0.5f, 0.5f, -0.5f}, {-0.5f, 0.5f, 0.5f}};
 
 Chunk::Chunk(void) {
   _renderAttrib.vao = nullptr;
   for (int y = 0; y < 256; y++) {
     for (int x = 0; x < 16; x++) {
       for (int z = 0; z < 16; z++) {
-        if (y != 6) set_block({Material::Dirt}, glm::ivec3(x, y, z));
+        if (x != 3 && y != 5) set_block({Material::Dirt}, glm::ivec3(x, y, z));
       }
     }
   }
@@ -30,33 +50,46 @@ Chunk& Chunk::operator=(Chunk const& rhs) {
   return (*this);
 }
 
-std::vector<glm::vec3> getFace(glm::ivec3 pos, glm::mat4 rot) {
-  glm::vec3 vpos = glm::vec3(pos);
-  std::vector<glm::vec3> plane_vertices = {
-      {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f},
-      {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}};
-  for (auto& vertex : plane_vertices) {
-    glm::vec4 ver_pos = glm::vec4(vertex, 1.0f) * rot;
-    vertex = glm::vec3(ver_pos) + vpos;
+std::vector<glm::vec3> getFace(glm::ivec3 pos, enum BlockSide side) {
+  std::vector<glm::vec3> vertices;
+  switch (side) {
+    case BlockSide::Front:
+      vertices.insert(vertices.begin(), cube_front.begin(), cube_front.end());
+      break;
+    case BlockSide::Back:
+      vertices.insert(vertices.begin(), cube_back.begin(), cube_back.end());
+      break;
+    case BlockSide::Left:
+      vertices.insert(vertices.begin(), cube_left.begin(), cube_left.end());
+      break;
+    case BlockSide::Right:
+      vertices.insert(vertices.begin(), cube_right.begin(), cube_right.end());
+      break;
+    case BlockSide::Bottom:
+      vertices.insert(vertices.begin(), cube_bottom.begin(), cube_bottom.end());
+      break;
+    case BlockSide::Up:
+      vertices.insert(vertices.begin(), cube_up.begin(), cube_up.end());
+      break;
+    default:
+      break;
   }
-  return (plane_vertices);
+  for (auto& vertex : vertices) {
+    vertex += pos;
+  }
+  return (vertices);
 }
 
 void Chunk::mesh() {
-  glm::mat4 defaultRot = glm::eulerAngleYXZ(0.0f, 0.0f, 0.0f);
-  glm::mat4 rotation[4] = {
-      glm::eulerAngleYXZ(glm::radians(90.0f), 0.0f, 0.0f),
-      glm::eulerAngleYXZ(glm::radians(0.0f), 0.0f, 0.0f),
-      glm::eulerAngleYXZ(0.0f, glm::radians(90.0f), 0.0f),
-      glm::eulerAngleYXZ(0.0f, glm::radians(90.0f), 0.0f),
-  };
+  enum BlockSide sides[4] = {BlockSide::Left, BlockSide::Right,
+                             BlockSide::Bottom, BlockSide::Up};
   std::vector<glm::vec3> vertices;
   for (int y = 0; y < 256; y++) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
       for (int z = 0; z < CHUNK_SIZE; z++) {
         Block front_block = get_block({x, y, z});
         if (front_block.material != Material::Air) {
-          auto quad = getFace({x, y, z}, defaultRot);
+          auto quad = getFace({x, y, z}, BlockSide::Front);
           vertices.insert(vertices.end(), quad.begin(), quad.end());
           break;
         }
@@ -69,7 +102,7 @@ void Chunk::mesh() {
         for (int f = 0; f < 4; f++) {
           Block b = get_block(positions[f]);
           if (b.material != Material::Air) {
-            auto quad = getFace(positions[f], rotation[f]);
+            auto quad = getFace(positions[f], sides[f]);
             vertices.insert(vertices.end(), quad.begin(), quad.end());
           }
         }
