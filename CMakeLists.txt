@@ -27,6 +27,7 @@ set(SOURCE_FILES
         src/chunk.cpp
         src/shader.cpp
         src/renderer.cpp
+        src/camera.cpp
         third-party/glad/glad.c)
 
 add_executable(ft_vox ${SOURCE_FILES})
