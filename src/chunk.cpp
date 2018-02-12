@@ -9,7 +9,7 @@ Chunk::Chunk(void) {
   for (int y = 0; y < 256; y++) {
     for (int x = 0; x < 16; x++) {
       for (int z = 0; z < 16; z++) {
-        set_block({Material::Dirt}, glm::ivec3(x, y, z));
+        if (y != 6) set_block({Material::Dirt}, glm::ivec3(x, y, z));
       }
     }
   }
@@ -30,16 +30,48 @@ Chunk& Chunk::operator=(Chunk const& rhs) {
   return (*this);
 }
 
+std::vector<glm::vec3> getFace(glm::ivec3 pos, glm::mat4 rot) {
+  glm::vec3 vpos = glm::vec3(pos);
+  std::vector<glm::vec3> plane_vertices = {
+      {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f},
+      {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}};
+  for (auto& vertex : plane_vertices) {
+    glm::vec4 ver_pos = glm::vec4(vertex, 1.0f) * rot;
+    vertex = glm::vec3(ver_pos) + vpos;
+  }
+  return (plane_vertices);
+}
+
 void Chunk::mesh() {
+  glm::mat4 defaultRot = glm::eulerAngleYXZ(0.0f, 0.0f, 0.0f);
+  glm::mat4 rotation[4] = {
+      glm::eulerAngleYXZ(glm::radians(90.0f), 0.0f, 0.0f),
+      glm::eulerAngleYXZ(glm::radians(0.0f), 0.0f, 0.0f),
+      glm::eulerAngleYXZ(0.0f, glm::radians(90.0f), 0.0f),
+      glm::eulerAngleYXZ(0.0f, glm::radians(90.0f), 0.0f),
+  };
   std::vector<glm::vec3> vertices;
-  for (int y = 0; y < CHUNK_SIZE; y++) {
+  for (int y = 0; y < 256; y++) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
       for (int z = 0; z < CHUNK_SIZE; z++) {
         Block front_block = get_block({x, y, z});
         if (front_block.material != Material::Air) {
-          vertices.insert(vertices.end(), plane_vertices.begin(),
-                          plane_vertices.end());
+          auto quad = getFace({x, y, z}, defaultRot);
+          vertices.insert(vertices.end(), quad.begin(), quad.end());
           break;
+        }
+        glm::ivec3 positions[4] = {
+            glm::ivec3(x - 1, y, z),
+            glm::ivec3(x + 1, y, z),
+            glm::ivec3(x, y + 1, z),
+            glm::ivec3(x, y - 1, z),
+        };
+        for (int f = 0; f < 4; f++) {
+          Block b = get_block(positions[f]);
+          if (b.material != Material::Air) {
+            auto quad = getFace(positions[f], rotation[f]);
+            vertices.insert(vertices.end(), quad.begin(), quad.end());
+          }
         }
       }
     }
@@ -52,6 +84,11 @@ void Chunk::mesh() {
 const RenderAttrib& Chunk::getRenderAttrib() { return (this->_renderAttrib); }
 
 inline Block Chunk::get_block(glm::ivec3 index) {
+  if (index.x < 0 || index.x >= CHUNK_SIZE || index.y < 0 || index.y >= 256 ||
+      index.z < 0 || index.z >= CHUNK_SIZE) {
+    Block block = {};
+    return (block);
+  }
   return (this->data[index.y * CHUNK_SIZE * CHUNK_SIZE + index.x * CHUNK_SIZE +
                      index.z]);
 }
