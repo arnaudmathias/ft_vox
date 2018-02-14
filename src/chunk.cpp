@@ -27,12 +27,12 @@ const std::vector<glm::vec3> cube_up = {
 Chunk::Chunk() : Chunk(glm::ivec3(0)) {}
 
 Chunk::Chunk(glm::ivec3 pos) : _pos(pos) {
-  _renderAttrib.vao = nullptr;
   _renderAttrib.model = glm::translate(_pos);
   for (int y = 0; y < 256; y++) {
     for (int x = 0; x < 16; x++) {
       for (int z = 0; z < 16; z++) {
-        if (x != 3 && y != 5) set_block({Material::Dirt}, glm::ivec3(x, y, z));
+        if (y < 16 && x != 3 && y != 5)
+          set_block({Material::Dirt}, glm::ivec3(x, y, z));
       }
     }
   }
@@ -41,15 +41,18 @@ Chunk::Chunk(glm::ivec3 pos) : _pos(pos) {
 Chunk::Chunk(Chunk const& src) { *this = src; }
 
 Chunk::~Chunk(void) {
-  if (_renderAttrib.vao != nullptr) delete _renderAttrib.vao;
+  for (auto& vao : _renderAttrib.vaos) {
+    delete vao;
+  }
 }
 
 Chunk& Chunk::operator=(Chunk const& rhs) {
   if (this != &rhs) {
     this->_pos = rhs._pos;
     std::memcpy(this->data, rhs.data, sizeof(this->data));
-    this->_renderAttrib.vao = rhs._renderAttrib.vao;
+    this->_renderAttrib.vaos = rhs._renderAttrib.vaos;
     this->_renderAttrib.model = rhs._renderAttrib.model;
+    std::memcpy(this->_dirty, rhs._dirty, sizeof(this->_dirty));
   }
   return (*this);
 }
@@ -85,62 +88,72 @@ std::vector<glm::vec3> getFace(glm::ivec3 pos, enum BlockSide side) {
 }
 
 void Chunk::mesh() {
+  size_t total_vertices = 0;
   enum BlockSide sides[4] = {BlockSide::Left, BlockSide::Right,
                              BlockSide::Bottom, BlockSide::Up};
-  std::vector<glm::vec3> vertices;
-  for (int y = 0; y < 256; y++) {
-    for (int x = 0; x < CHUNK_SIZE; x++) {
-      Block current_block = {};
-      for (int z = 0; z < CHUNK_SIZE; z++) {
-        Block front_block = get_block({x, y, z});
-        if (front_block != current_block) {
-          current_block = front_block;
-          if (front_block.material != Material::Air) {
-            auto quad = getFace({x, y, z}, BlockSide::Front);
+  for (int model_id = 0; model_id < CHUNK_HEIGHT / MODEL_HEIGHT; model_id++) {
+    if (_dirty[model_id] == false) continue;
+    std::vector<glm::vec3> vertices;
+    for (int y = model_id * MODEL_HEIGHT;
+         y < model_id * MODEL_HEIGHT + MODEL_HEIGHT; y++) {
+      for (int x = 0; x < CHUNK_SIZE; x++) {
+        Block current_block = {};
+        for (int z = 0; z < CHUNK_SIZE; z++) {
+          Block front_block = get_block({x, y, z});
+          if (front_block != current_block) {
+            current_block = front_block;
+            if (front_block.material != Material::Air) {
+              auto quad = getFace({x, y, z}, BlockSide::Front);
+              vertices.insert(vertices.end(), quad.begin(), quad.end());
+            }
+          }
+          if (z == CHUNK_SIZE - 1 && current_block.material != Material::Air) {
+            auto quad = getFace({x, y, z}, BlockSide::Back);
             vertices.insert(vertices.end(), quad.begin(), quad.end());
           }
-        }
-        if (z == CHUNK_SIZE - 1 && current_block.material != Material::Air) {
-          auto quad = getFace({x, y, z}, BlockSide::Back);
-          vertices.insert(vertices.end(), quad.begin(), quad.end());
-        }
-        if (x == 0 && current_block.material != Material::Air) {
-          auto quad = getFace({x, y, z}, BlockSide::Right);
-          vertices.insert(vertices.end(), quad.begin(), quad.end());
-        }
-        if (x == CHUNK_SIZE - 1 && current_block.material != Material::Air) {
-          auto quad = getFace({x, y, z}, BlockSide::Left);
-          vertices.insert(vertices.end(), quad.begin(), quad.end());
-        }
-        if (y == 0 && current_block.material != Material::Air) {
-          auto quad = getFace({x, y, z}, BlockSide::Bottom);
-          vertices.insert(vertices.end(), quad.begin(), quad.end());
-        }
-        if (y == 255 && current_block.material != Material::Air) {
-          auto quad = getFace({x, y, z}, BlockSide::Up);
-          vertices.insert(vertices.end(), quad.begin(), quad.end());
-        }
-        if (current_block.material == Material::Air) {
-          glm::ivec3 positions[4] = {
-              glm::ivec3(x - 1, y, z),
-              glm::ivec3(x + 1, y, z),
-              glm::ivec3(x, y + 1, z),
-              glm::ivec3(x, y - 1, z),
-          };
-          for (int f = 0; f < 4; f++) {
-            Block b = get_block(positions[f]);
-            if (b.material != Material::Air) {
-              auto quad = getFace(positions[f], sides[f]);
-              vertices.insert(vertices.end(), quad.begin(), quad.end());
+          if (x == 0 && current_block.material != Material::Air) {
+            auto quad = getFace({x, y, z}, BlockSide::Right);
+            vertices.insert(vertices.end(), quad.begin(), quad.end());
+          }
+          if (x == CHUNK_SIZE - 1 && current_block.material != Material::Air) {
+            auto quad = getFace({x, y, z}, BlockSide::Left);
+            vertices.insert(vertices.end(), quad.begin(), quad.end());
+          }
+          if (y == 0 && current_block.material != Material::Air) {
+            auto quad = getFace({x, y, z}, BlockSide::Bottom);
+            vertices.insert(vertices.end(), quad.begin(), quad.end());
+          }
+          if (y == 255 && current_block.material != Material::Air) {
+            auto quad = getFace({x, y, z}, BlockSide::Up);
+            vertices.insert(vertices.end(), quad.begin(), quad.end());
+          }
+          if (current_block.material == Material::Air) {
+            glm::ivec3 positions[4] = {
+                glm::ivec3(x - 1, y, z),
+                glm::ivec3(x + 1, y, z),
+                glm::ivec3(x, y + 1, z),
+                glm::ivec3(x, y - 1, z),
+            };
+            for (int f = 0; f < 4; f++) {
+              Block b = get_block(positions[f]);
+              if (b.material != Material::Air) {
+                auto quad = getFace(positions[f], sides[f]);
+                vertices.insert(vertices.end(), quad.begin(), quad.end());
+              }
             }
           }
         }
       }
     }
+    _dirty[model_id] = false;
+    total_vertices += vertices.size();
+    if (this->_renderAttrib.vaos.size() <= model_id) {
+      this->_renderAttrib.vaos.push_back(new VAO(vertices));
+    } else {
+      this->_renderAttrib.vaos[model_id]->update(vertices);
+    }
   }
-  if (this->_renderAttrib.vao != nullptr) delete this->_renderAttrib.vao;
-  this->_renderAttrib.vao = new VAO(vertices);
-  std::cout << "Mesher: " << vertices.size() << " vertices" << std::endl;
+  std::cout << "Mesher: " << total_vertices << " vertices" << std::endl;
 };
 
 const RenderAttrib& Chunk::getRenderAttrib() { return (this->_renderAttrib); }
@@ -158,6 +171,7 @@ inline Block Chunk::get_block(glm::ivec3 index) {
 inline void Chunk::set_block(Block block, glm::ivec3 index) {
   this->data[index.y * CHUNK_SIZE * CHUNK_SIZE + index.x * CHUNK_SIZE +
              index.z] = block;
+  this->_dirty[index.y / MODEL_HEIGHT] = true;
 }
 
 ChunkManager::ChunkManager(void) : _renderDistance(0) {
@@ -189,10 +203,14 @@ ChunkManager& ChunkManager::operator=(ChunkManager const& rhs) {
 }
 
 void ChunkManager::update(glm::vec3 player_pos) {
-  glm::ivec3 pos(player_pos);
-  for (int x = -this->_renderDistance; x < this->_renderDistance; x++) {
-    for (int z = -this->_renderDistance; z < this->_renderDistance; z++) {
-      // chunks.find
+  glm::ivec2 pos(0);
+  for (int x = -this->_renderDistance; x <= this->_renderDistance; x++) {
+    for (int z = -this->_renderDistance; z <= this->_renderDistance; z++) {
+      glm::ivec2 chunk_pos(pos.x + x * CHUNK_SIZE, pos.y + z * CHUNK_SIZE);
+      auto chunk = _chunks.find(chunk_pos);
+      if (chunk != _chunks.end()) {
+        //
+      }
     }
   }
 }

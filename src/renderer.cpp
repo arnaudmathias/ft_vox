@@ -99,7 +99,7 @@ void Renderer::switchShader(GLuint shader_id, int &current_shader_id) {
 
 void Renderer::updateUniforms(const RenderAttrib &attrib, const int shader_id,
                               std::array<int, 4> &tex_channel) {
-  if (shader_id > 0 && attrib.vao != nullptr) {
+  if (shader_id > 0 && attrib.vaos.size() > 0) {
     setUniform(glGetUniformLocation(shader_id, "iChannel0"), 0);
     setUniform(glGetUniformLocation(shader_id, "iChannel1"), 1);
     setUniform(glGetUniformLocation(shader_id, "iChannel2"), 2);
@@ -123,8 +123,10 @@ void Renderer::draw() {
     switchTextures({attrib.iChannel0, attrib.iChannel1, attrib.iChannel2,
                     attrib.iChannel3},
                    tex_channel);
-    glBindVertexArray(attrib.vao->vao);
-    glDrawArrays(GL_TRIANGLES, 0, attrib.vao->vertices_size);
+    for (const auto &vao : attrib.vaos) {
+      glBindVertexArray(vao->vao);
+      glDrawArrays(GL_TRIANGLES, 0, vao->vertices_size);
+    }
   }
   glBindVertexArray(0);
 }
@@ -146,5 +148,5 @@ void Renderer::loadCubeMap(std::string vertex_sha, std::string fragment_sha,
 }
 
 bool RenderAttrib::operator<(const struct RenderAttrib &rhs) const {
-  return (this->vao->vao < rhs.vao->vao);
+  return (this->vaos[0]->vao < rhs.vaos[0]->vao);
 }

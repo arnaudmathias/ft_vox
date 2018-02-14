@@ -44,6 +44,7 @@ VAO::VAO(const std::vector<glm::vec3> &positions) {
 }
 
 void VAO::update(const std::vector<glm::vec3> &positions) {
+  this->vertices_size = positions.size();
   glBindBuffer(GL_ARRAY_BUFFER, this->_vbo);
   glBufferData(GL_ARRAY_BUFFER, positions.size() * sizeof(glm::vec3),
                positions.data(), GL_DYNAMIC_DRAW);

@@ -1,14 +1,15 @@
 #pragma once
 #define CHUNK_SIZE 16
+#define CHUNK_HEIGHT 256
 #define MODEL_HEIGHT 16
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
-//#include <glm/gtx/hash.hpp>
 #include <iostream>
 #include <map>
 #include <unordered_map>
 #include <vector>
 #include "renderer.hpp"
+#include "vao.hpp"
 
 struct ivec2Comparator {
   size_t operator()(const glm::ivec2& k) const {
@@ -48,6 +49,7 @@ class Chunk {
 
  private:
   Chunk(void);
+  bool _dirty[CHUNK_HEIGHT / MODEL_HEIGHT] = {true};  // is Remesh needed ?
   RenderAttrib _renderAttrib;
   glm::ivec3 _pos;
 };

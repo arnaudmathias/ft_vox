@@ -34,15 +34,14 @@ struct Uniforms {
 };
 
 struct RenderAttrib {
-  VAO* vao;
+  std::vector<VAO*> vaos;
   glm::mat4 model;
   Texture* iChannel0;
   Texture* iChannel1;
   Texture* iChannel2;
   Texture* iChannel3;
   RenderAttrib()
-      : vao(nullptr),
-        iChannel0(nullptr),
+      : iChannel0(nullptr),
         iChannel1(nullptr),
         iChannel2(nullptr),
         iChannel3(nullptr){};
