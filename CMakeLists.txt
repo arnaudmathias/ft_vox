@@ -29,6 +29,8 @@ set(SOURCE_FILES
         src/shader.cpp
         src/renderer.cpp
         src/camera.cpp
+        src/vao.cpp
+        src/texture.cpp
         third-party/glad/glad.c)
 
 add_executable(ft_vox ${SOURCE_FILES})

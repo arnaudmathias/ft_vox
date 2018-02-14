@@ -5,18 +5,10 @@
 #include "env.hpp"
 #include "ft_vox.hpp"
 #include "shader.hpp"
+#include "texture.hpp"
+#include "vao.hpp"
 
 class Shader;
-
-struct Texture {
-  Texture(int width, int height);
-  Texture(std::string filename);
-  ~Texture();
-  std::string filename;
-  GLuint id;
-  int height;
-  int width;
-};
 
 struct Uniforms {
   glm::mat4 view;
@@ -39,19 +31,6 @@ struct Uniforms {
   float zNear;
   float fovYscale;
   /* samplerXX iChanneli; */
-};
-
-struct VAO {
-  VAO(const std::vector<Vertex>& vertices);
-  VAO(const std::vector<glm::vec3>& positions);
-  ~VAO();
-  GLuint vao;
-  GLsizei vertices_size;
-  GLsizei indices_size;
-  std::vector<Vertex> vertices;
-
- private:
-  GLuint _vbo;
 };
 
 struct RenderAttrib {
@@ -90,6 +69,7 @@ class Renderer {
  private:
   int _width;
   int _height;
+  Texture* _cubeMapTexture;
   GLuint _cubeMap;
   VAO* _cubeMapVao;
   Shader* _cubeMapShader;
