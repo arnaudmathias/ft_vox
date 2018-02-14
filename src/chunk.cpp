@@ -94,18 +94,16 @@ void Chunk::mesh() {
   for (int model_id = 0; model_id < CHUNK_HEIGHT / MODEL_HEIGHT; model_id++) {
     if (_dirty[model_id] == false) continue;
     std::vector<glm::vec3> vertices;
-    for (int y = model_id * MODEL_HEIGHT;
-         y < model_id * MODEL_HEIGHT + MODEL_HEIGHT; y++) {
+    for (int y = model_id * MODEL_HEIGHT; y < ((model_id + 1) * MODEL_HEIGHT);
+         y++) {
       for (int x = 0; x < CHUNK_SIZE; x++) {
         Block current_block = {};
         for (int z = 0; z < CHUNK_SIZE; z++) {
           Block front_block = get_block({x, y, z});
           if (front_block != current_block) {
             current_block = front_block;
-            if (front_block.material != Material::Air) {
-              auto quad = getFace({x, y, z}, BlockSide::Front);
-              vertices.insert(vertices.end(), quad.begin(), quad.end());
-            }
+            auto quad = getFace({x, y, z}, BlockSide::Front);
+            vertices.insert(vertices.end(), quad.begin(), quad.end());
           }
           if (z == CHUNK_SIZE - 1 && current_block.material != Material::Air) {
             auto quad = getFace({x, y, z}, BlockSide::Back);
@@ -123,7 +121,7 @@ void Chunk::mesh() {
             auto quad = getFace({x, y, z}, BlockSide::Bottom);
             vertices.insert(vertices.end(), quad.begin(), quad.end());
           }
-          if (y == 255 && current_block.material != Material::Air) {
+          if (y == CHUNK_SIZE - 1 && current_block.material != Material::Air) {
             auto quad = getFace({x, y, z}, BlockSide::Up);
             vertices.insert(vertices.end(), quad.begin(), quad.end());
           }
