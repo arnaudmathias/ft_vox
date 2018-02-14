@@ -6,6 +6,8 @@
 #include "ft_vox.hpp"
 #include "shader.hpp"
 
+class Shader;
+
 struct Texture {
   Texture(int width, int height);
   Texture(std::string filename);
@@ -40,8 +42,8 @@ struct Uniforms {
 };
 
 struct VAO {
-  VAO(std::vector<Vertex> vertices);
-  VAO(std::vector<glm::vec3> positions);
+  VAO(const std::vector<Vertex>& vertices);
+  VAO(const std::vector<glm::vec3>& positions);
   ~VAO();
   GLuint vao;
   GLsizei vertices_size;
@@ -52,11 +54,8 @@ struct VAO {
   GLuint _vbo;
 };
 
-class Shader;
-
 struct RenderAttrib {
   VAO* vao;
-  // Shader* shader;
   glm::mat4 model;
   Texture* iChannel0;
   Texture* iChannel1;
@@ -82,11 +81,10 @@ class Renderer {
   void draw();
   void flush();
   void reset();
-  void printRenderAttribs();
   int getScreenWidth();
   int getScreenHeight();
   void loadCubeMap(std::string vertex_sha, std::string fragment_sha,
-                   std::vector<std::string> textures);
+                   const std::vector<std::string>& textures);
   Uniforms uniforms;
 
  private:
@@ -99,7 +97,7 @@ class Renderer {
   Renderer(void);
   std::vector<RenderAttrib> _renderAttribs;
   void bindTexture(Texture* texture, int& texture_binded, GLenum tex_slot);
-  void switchTextures(std::array<Texture*, 4> textures,
+  void switchTextures(const std::array<Texture*, 4>& textures,
                       std::array<int, 4>& tex_channel);
   void switchShader(GLuint shader_id, int& current_shader_id);
   void updateUniforms(const RenderAttrib& attrib, const int shader_id,

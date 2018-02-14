@@ -64,7 +64,7 @@ void Renderer::bindTexture(Texture *texture, int &texture_binded,
   }
 }
 
-void Renderer::switchTextures(std::array<Texture *, 4> textures,
+void Renderer::switchTextures(const std::array<Texture *, 4> &textures,
                               std::array<int, 4> &tex_channel) {
   bindTexture(textures[0], tex_channel[0], GL_TEXTURE0);
   bindTexture(textures[1], tex_channel[1], GL_TEXTURE1);
@@ -116,7 +116,6 @@ void Renderer::updateUniforms(const RenderAttrib &attrib, const int shader_id,
 
 void Renderer::draw() {
   std::sort(_renderAttribs.begin(), _renderAttribs.end());
-  // printRenderAttribs();
   int shader_id = -1;
   std::array<int, 4> tex_channel = {-1, -1, -1, -1};
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -134,33 +133,14 @@ void Renderer::draw() {
 
 void Renderer::flush() { this->_renderAttribs.clear(); }
 
-void Renderer::printRenderAttribs() {
-  std::cout << "------------" << std::endl;
-  for (const auto &attrib : this->_renderAttribs) {
-    // std::cout << "shader: " << attrib.shader;
-    if (attrib.vao != nullptr) {
-      std::cout << " | vao:" << attrib.vao->vao;
-    }
-    if (attrib.iChannel0 != nullptr) {
-      std::cout << " | texture:" << attrib.iChannel0->id;
-    }
-    std::cout << std::endl;
-  }
-  std::cout << "------------" << std::endl;
-}
-
-void Renderer::reset() {
-  /* this->view = glm::mat4(); */
-  /* this->proj = glm::mat4(); */
-  this->_renderAttribs.clear();
-}
+void Renderer::reset() { this->_renderAttribs.clear(); }
 
 int Renderer::getScreenWidth() { return (this->_width); }
 
 int Renderer::getScreenHeight() { return (this->_height); }
 
 void Renderer::loadCubeMap(std::string vertex_sha, std::string fragment_sha,
-                           std::vector<std::string> textures) {
+                           const std::vector<std::string> &textures) {
   glGenTextures(1, &this->_cubeMap);
   glBindTexture(GL_TEXTURE_CUBE_MAP, this->_cubeMap);
   // stbi_set_flip_vertically_on_load(true);
@@ -191,16 +171,10 @@ void Renderer::loadCubeMap(std::string vertex_sha, std::string fragment_sha,
 }
 
 bool RenderAttrib::operator<(const struct RenderAttrib &rhs) const {
-  // sort renderAttrib by shader and vao
-  // Must avoid as much as possible context switch
-  /*if (this->shader->id == rhs.shader->id && this->vao != nullptr &&
-      rhs.vao != nullptr) { */
   return (this->vao->vao < rhs.vao->vao);
-  //}
-  // return (this->shader->id < rhs.shader->id);
 }
 
-VAO::VAO(std::vector<Vertex> vertices) : vertices(vertices) {
+VAO::VAO(const std::vector<Vertex> &vertices) : vertices(vertices) {
   this->_vbo = 0;
   this->vao = 0;
   this->vertices_size = vertices.size();
@@ -222,7 +196,7 @@ VAO::VAO(std::vector<Vertex> vertices) : vertices(vertices) {
   glEnableVertexAttribArray(2);
 }
 
-VAO::VAO(std::vector<glm::vec3> positions) {
+VAO::VAO(const std::vector<glm::vec3> &positions) {
   this->_vbo = 0;
   this->vao = 0;
   this->vertices_size = positions.size();
