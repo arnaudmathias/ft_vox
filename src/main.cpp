@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
   ChunkManager chunkManager;
   Renderer renderer(1280, 720);
   Camera camera(glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, 0.0, 0.0), 1280, 720);
-
+  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   while (!glfwWindowShouldClose(env.window)) {
     env.update();
     chunkManager.setRenderAttributes(renderer);

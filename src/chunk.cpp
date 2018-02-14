@@ -86,24 +86,49 @@ void Chunk::mesh() {
   std::vector<glm::vec3> vertices;
   for (int y = 0; y < 256; y++) {
     for (int x = 0; x < CHUNK_SIZE; x++) {
+      Block current_block = {};
       for (int z = 0; z < CHUNK_SIZE; z++) {
         Block front_block = get_block({x, y, z});
-        if (front_block.material != Material::Air) {
-          auto quad = getFace({x, y, z}, BlockSide::Front);
-          vertices.insert(vertices.end(), quad.begin(), quad.end());
-          break;
-        }
-        glm::ivec3 positions[4] = {
-            glm::ivec3(x - 1, y, z),
-            glm::ivec3(x + 1, y, z),
-            glm::ivec3(x, y + 1, z),
-            glm::ivec3(x, y - 1, z),
-        };
-        for (int f = 0; f < 4; f++) {
-          Block b = get_block(positions[f]);
-          if (b.material != Material::Air) {
-            auto quad = getFace(positions[f], sides[f]);
+        if (front_block != current_block) {
+          current_block = front_block;
+          if (front_block.material != Material::Air) {
+            auto quad = getFace({x, y, z}, BlockSide::Front);
             vertices.insert(vertices.end(), quad.begin(), quad.end());
+          }
+        }
+        if (z == CHUNK_SIZE - 1 && current_block.material != Material::Air) {
+          auto quad = getFace({x, y, z}, BlockSide::Back);
+          vertices.insert(vertices.end(), quad.begin(), quad.end());
+        }
+        if (x == 0 && current_block.material != Material::Air) {
+          auto quad = getFace({x, y, z}, BlockSide::Right);
+          vertices.insert(vertices.end(), quad.begin(), quad.end());
+        }
+        if (x == CHUNK_SIZE - 1 && current_block.material != Material::Air) {
+          auto quad = getFace({x, y, z}, BlockSide::Left);
+          vertices.insert(vertices.end(), quad.begin(), quad.end());
+        }
+        if (y == 0 && current_block.material != Material::Air) {
+          auto quad = getFace({x, y, z}, BlockSide::Bottom);
+          vertices.insert(vertices.end(), quad.begin(), quad.end());
+        }
+        if (y == 255 && current_block.material != Material::Air) {
+          auto quad = getFace({x, y, z}, BlockSide::Up);
+          vertices.insert(vertices.end(), quad.begin(), quad.end());
+        }
+        if (current_block.material == Material::Air) {
+          glm::ivec3 positions[4] = {
+              glm::ivec3(x - 1, y, z),
+              glm::ivec3(x + 1, y, z),
+              glm::ivec3(x, y + 1, z),
+              glm::ivec3(x, y - 1, z),
+          };
+          for (int f = 0; f < 4; f++) {
+            Block b = get_block(positions[f]);
+            if (b.material != Material::Air) {
+              auto quad = getFace(positions[f], sides[f]);
+              vertices.insert(vertices.end(), quad.begin(), quad.end());
+            }
           }
         }
       }
