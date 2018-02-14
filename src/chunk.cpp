@@ -57,32 +57,40 @@ Chunk& Chunk::operator=(Chunk const& rhs) {
   return (*this);
 }
 
-std::vector<glm::vec3> getFace(glm::ivec3 pos, enum BlockSide side) {
-  std::vector<glm::vec3> vertices;
+const std::vector<Vertex> getFace(glm::ivec3 pos, enum BlockSide side) {
+  std::vector<Vertex> vertices;
+  std::vector<glm::vec3> positions;
   switch (side) {
     case BlockSide::Front:
-      vertices.insert(vertices.begin(), cube_front.begin(), cube_front.end());
+      positions.insert(positions.begin(), cube_front.begin(), cube_front.end());
       break;
     case BlockSide::Back:
-      vertices.insert(vertices.begin(), cube_back.begin(), cube_back.end());
+      positions.insert(positions.begin(), cube_back.begin(), cube_back.end());
       break;
     case BlockSide::Left:
-      vertices.insert(vertices.begin(), cube_left.begin(), cube_left.end());
+      positions.insert(positions.begin(), cube_left.begin(), cube_left.end());
       break;
     case BlockSide::Right:
-      vertices.insert(vertices.begin(), cube_right.begin(), cube_right.end());
+      positions.insert(positions.begin(), cube_right.begin(), cube_right.end());
       break;
     case BlockSide::Bottom:
-      vertices.insert(vertices.begin(), cube_bottom.begin(), cube_bottom.end());
+      positions.insert(positions.begin(), cube_bottom.begin(),
+                       cube_bottom.end());
       break;
     case BlockSide::Up:
-      vertices.insert(vertices.begin(), cube_up.begin(), cube_up.end());
+      positions.insert(positions.begin(), cube_up.begin(), cube_up.end());
       break;
     default:
       break;
   }
-  for (auto& vertex : vertices) {
-    vertex += pos;
+  for (const auto& vertex_position : positions) {
+    Vertex v;
+    v.position = vertex_position + glm::vec3(pos);
+    v.data = (static_cast<unsigned int>(side) & 0x000000ff) >> 0;
+    v.data = (static_cast<unsigned int>(side) & 0x0000ff00) >> 8;
+    v.data = (static_cast<unsigned int>(side) & 0x00ff0000) >> 16;
+    v.data = (static_cast<unsigned int>(side) & 0xff000000) >> 24;
+    vertices.push_back(v);
   }
   return (vertices);
 }
@@ -93,7 +101,7 @@ void Chunk::mesh() {
                              BlockSide::Bottom, BlockSide::Up};
   for (int model_id = 0; model_id < CHUNK_HEIGHT / MODEL_HEIGHT; model_id++) {
     if (_dirty[model_id] == false) continue;
-    std::vector<glm::vec3> vertices;
+    std::vector<Vertex> vertices;
     for (int y = model_id * MODEL_HEIGHT; y < ((model_id + 1) * MODEL_HEIGHT);
          y++) {
       for (int x = 0; x < CHUNK_SIZE; x++) {
