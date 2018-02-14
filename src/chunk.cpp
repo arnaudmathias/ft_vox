@@ -86,10 +86,12 @@ const std::vector<Vertex> getFace(glm::ivec3 pos, enum BlockSide side) {
   for (const auto& vertex_position : positions) {
     Vertex v;
     v.position = vertex_position + glm::vec3(pos);
-    v.data = (static_cast<unsigned int>(side) & 0x000000ff) >> 0;
-    v.data = (static_cast<unsigned int>(side) & 0x0000ff00) >> 8;
-    v.data = (static_cast<unsigned int>(side) & 0x00ff0000) >> 16;
-    v.data = (static_cast<unsigned int>(side) & 0xff000000) >> 24;
+
+    v.data = 0;
+    v.data |= (static_cast<unsigned int>(2) & 0xff) << 0;
+    // v.data |= (static_cast<unsigned int>(3) << 8);
+    // v.data |= (static_cast<unsigned int>(5) << 16);
+    // v.data |= (static_cast<unsigned int>(7) << 24);
     vertices.push_back(v);
   }
   return (vertices);

@@ -6,7 +6,7 @@ uniform mat4 MVP;
 
 out vec3 color;
 
-const vec3 normal_table[6] = vec3[](
+const vec3 normal_table[6] = vec3[6](
   vec3(0.0, 0.0, 1.0),
   vec3(0.0, 0.0, -1.0),
   vec3(1.0, 0.0, 0.0),
@@ -16,11 +16,13 @@ const vec3 normal_table[6] = vec3[](
 );
 
 void main() {
-  color = vec3(cos(vert_data), sin(vert_data), tan(vert_data));
   //uint side_unpack = (vert_data & uint(0xff000000)) >> 24;
-  //uint side_unpack = (vert_data & uint(0x000000ff)) >> 0;
+  uint side_unpack = (vert_data & uint(0x0000ff00)) >> 8;
+  //color = vec3(side_unpack);
+  //color = vec3(vert_data);
   //vec3 normal = normal_table[side_unpack];
-  vec3 normal = normal_table[vert_data];
-  color = normal;
+  //vec3 normal = normal_table[vert_data];
+  //color = normal;
+  color = vec3(1.0, 0.0, 0.0);
   gl_Position = MVP * vec4(vert_pos, 1.0);
 }

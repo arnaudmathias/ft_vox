@@ -21,7 +21,6 @@ VAO::VAO(const std::vector<Vertex> &vertices) {
 
   glEnableVertexAttribArray(0);
   glEnableVertexAttribArray(1);
-  //  glEnableVertexAttribArray(2);
 }
 
 VAO::VAO(const std::vector<glm::vec3> &positions) {
