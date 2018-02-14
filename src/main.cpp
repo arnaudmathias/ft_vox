@@ -10,6 +10,7 @@ int main(int argc, char **argv) {
   ChunkManager chunkManager;
   Renderer renderer(1280, 720);
   Camera camera(glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, 0.0, 0.0), 1280, 720);
+  bool wireframe = true;
   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   while (!glfwWindowShouldClose(env.window)) {
     env.update();
@@ -29,6 +30,12 @@ int main(int argc, char **argv) {
     GL_DUMP_ERROR("draw loop");
     if (env.inputHandler.keys[GLFW_KEY_ESCAPE]) {
       glfwSetWindowShouldClose(env.window, 1);
+    }
+    if (env.inputHandler.keys[GLFW_KEY_M]) {
+      env.inputHandler.keys[GLFW_KEY_M] = false;
+      wireframe = !wireframe;
+      wireframe ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+                : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
   }
 }
