@@ -33,13 +33,12 @@ struct Block {
 
 class Chunk {
  public:
-  Chunk(void);
+  Chunk(glm::ivec3 pos);
   Chunk(Chunk const& src);
   ~Chunk(void);
   Chunk& operator=(Chunk const& rhs);
 
   Block data[65536] = {};
-  glm::ivec3 pos;
 
   void mesh();
 
@@ -48,7 +47,9 @@ class Chunk {
   const RenderAttrib& getRenderAttrib();
 
  private:
+  Chunk(void);
   RenderAttrib _renderAttrib;
+  glm::ivec3 _pos;
 };
 
 class ChunkManager {

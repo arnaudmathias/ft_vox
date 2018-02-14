@@ -24,8 +24,11 @@ const std::vector<glm::vec3> cube_up = {
     {-0.5f, 0.5f, 0.5f}, {0.5f, 0.5f, 0.5f},   {0.5f, 0.5f, -0.5f},
     {0.5f, 0.5f, -0.5f}, {-0.5f, 0.5f, -0.5f}, {-0.5f, 0.5f, 0.5f}};
 
-Chunk::Chunk(void) {
+Chunk::Chunk() : Chunk(glm::ivec3(0)) {}
+
+Chunk::Chunk(glm::ivec3 pos) : _pos(pos) {
   _renderAttrib.vao = nullptr;
+  _renderAttrib.model = glm::translate(_pos);
   for (int y = 0; y < 256; y++) {
     for (int x = 0; x < 16; x++) {
       for (int z = 0; z < 16; z++) {
@@ -43,9 +46,10 @@ Chunk::~Chunk(void) {
 
 Chunk& Chunk::operator=(Chunk const& rhs) {
   if (this != &rhs) {
-    this->pos = rhs.pos;
+    this->_pos = rhs._pos;
     std::memcpy(this->data, rhs.data, sizeof(this->data));
     this->_renderAttrib.vao = rhs._renderAttrib.vao;
+    this->_renderAttrib.model = rhs._renderAttrib.model;
   }
   return (*this);
 }
@@ -163,7 +167,7 @@ ChunkManager::ChunkManager(void) : _renderDistance(0) {
       glm::ivec2 chunk_pos(pos.x + x * CHUNK_SIZE, pos.y + z * CHUNK_SIZE);
       auto chunk = _chunks.find(chunk_pos);
       if (chunk == _chunks.end()) {
-        _chunks.emplace(chunk_pos, Chunk());
+        _chunks.emplace(chunk_pos, Chunk({chunk_pos.x, 0, chunk_pos.y}));
         auto newchunk = _chunks.find(chunk_pos);
         newchunk->second.mesh();
       }
