@@ -14,13 +14,9 @@ VAO::VAO(const std::vector<Vertex> &vertices) {
   glBindVertexArray(this->vao);
 
   glBindBuffer(GL_ARRAY_BUFFER, this->_vbo);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+  glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                         (GLvoid *)offsetof(Vertex, position));
-  glVertexAttribPointer(1, 1, GL_UNSIGNED_INT, GL_FALSE, sizeof(Vertex),
-                        (GLvoid *)offsetof(Vertex, data));
-
   glEnableVertexAttribArray(0);
-  glEnableVertexAttribArray(1);
 }
 
 VAO::VAO(const std::vector<glm::vec3> &positions) {

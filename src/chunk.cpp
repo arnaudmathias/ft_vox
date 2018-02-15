@@ -31,8 +31,8 @@ Chunk::Chunk(glm::ivec3 pos) : _pos(pos) {
   for (int y = 0; y < 256; y++) {
     for (int x = 0; x < 16; x++) {
       for (int z = 0; z < 16; z++) {
-        if (y < 16 && x != 3 && y != 5)
-          set_block({Material::Dirt}, glm::ivec3(x, y, z));
+        // if (y < 16 && x != 3 && y != 5)
+        set_block({Material::Dirt}, glm::ivec3(x, y, z));
       }
     }
   }
@@ -85,13 +85,8 @@ const std::vector<Vertex> getFace(glm::ivec3 pos, enum BlockSide side) {
   }
   for (const auto& vertex_position : positions) {
     Vertex v;
-    v.position = vertex_position + glm::vec3(pos);
-
-    v.data = 0;
-    v.data |= (static_cast<unsigned int>(2) & 0xff) << 0;
-    // v.data |= (static_cast<unsigned int>(3) << 8);
-    // v.data |= (static_cast<unsigned int>(5) << 16);
-    // v.data |= (static_cast<unsigned int>(7) << 24);
+    v.position = glm::vec4(vertex_position + glm::vec3(pos), 0.0f);
+    v.position.w = static_cast<float>(side);
     vertices.push_back(v);
   }
   return (vertices);
@@ -131,7 +126,8 @@ void Chunk::mesh() {
             auto quad = getFace({x, y, z}, BlockSide::Bottom);
             vertices.insert(vertices.end(), quad.begin(), quad.end());
           }
-          if (y == CHUNK_SIZE - 1 && current_block.material != Material::Air) {
+          if (y == CHUNK_HEIGHT - 1 &&
+              current_block.material != Material::Air) {
             auto quad = getFace({x, y, z}, BlockSide::Up);
             vertices.insert(vertices.end(), quad.begin(), quad.end());
           }
@@ -217,7 +213,11 @@ void ChunkManager::update(glm::vec3 player_pos) {
       glm::ivec2 chunk_pos(pos.x + x * CHUNK_SIZE, pos.y + z * CHUNK_SIZE);
       auto chunk = _chunks.find(chunk_pos);
       if (chunk != _chunks.end()) {
-        //
+        /*
+        chunk->second.set_block(
+            {},
+            glm::ivec3(rand() % CHUNK_SIZE, rand() % 256, rand() % CHUNK_SIZE));
+        chunk->second.mesh(); */
       }
     }
   }
