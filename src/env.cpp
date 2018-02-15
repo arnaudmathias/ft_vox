@@ -6,7 +6,7 @@ Env::Env(int w, int h) : width(w), height(h), _frame(0) {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  window = glfwCreateWindow(width, height, "ShaderPixel", NULL, NULL);
+  window = glfwCreateWindow(width, height, "ft_vox", NULL, NULL);
   if (!window) {
     std::cout << "Could not create window\n";
     glfwTerminate();

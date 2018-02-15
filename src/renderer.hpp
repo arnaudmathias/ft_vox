@@ -68,6 +68,7 @@ class Renderer {
  private:
   int _width;
   int _height;
+  Texture* _textureAtlas;
   Texture* _cubeMapTexture;
   GLuint _cubeMap;
   VAO* _cubeMapVao;

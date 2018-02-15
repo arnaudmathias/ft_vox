@@ -21,7 +21,7 @@ Texture::Texture(int width, int height)
 
 Texture::Texture(std::string filename) : id(0), filename(filename) {
   int texChannels;
-  stbi_set_flip_vertically_on_load(true);
+  // stbi_set_flip_vertically_on_load(true);
   stbi_uc *pixels = stbi_load(filename.c_str(), &this->width, &this->height,
                               &texChannels, STBI_rgb_alpha);
   if (pixels != nullptr) {
@@ -37,6 +37,50 @@ Texture::Texture(std::string filename) : id(0), filename(filename) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, this->width, this->height, 0,
                  GL_RGBA, GL_UNSIGNED_BYTE, pixels);
     glGenerateMipmap(GL_TEXTURE_2D);
+
+    stbi_image_free(pixels);
+    glBindTexture(GL_TEXTURE_2D, 0);
+  } else {
+    throw std::runtime_error("Invalid texture file");
+  }
+}
+
+Texture::Texture(std::string filename, int offset_x, int offset_y) {
+  int texChannels;
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  stbi_set_flip_vertically_on_load(true);
+  stbi_uc *pixels = stbi_load(filename.c_str(), &this->width, &this->height,
+                              &texChannels, STBI_rgb);
+  std::cout << width << " | " << height << " ,texChannels: " << texChannels
+            << std::endl;
+  if (pixels != nullptr) {
+    glGenTextures(1, &this->id);
+
+    glBindTexture(GL_TEXTURE_2D_ARRAY, this->id);
+    int depth = (this->width / offset_x) * (this->height / offset_y);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB8, offset_x, offset_y, depth, 0,
+                 GL_RGB, GL_UNSIGNED_BYTE, pixels);
+    /*
+    GL_DUMP_ERROR("glTexImage3D");
+    int zoffset = 0;
+    for (int y = 0; y < height; y += offset_y) {
+      for (int x = 0; x < width; x += offset_x) {
+        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, x, y, zoffset, offset_x,
+                        offset_y, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+        zoffset++;
+      }
+    }
+    GL_DUMP_ERROR("glTexSubImage3D");*/
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER,
+                    GL_NEAREST_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 
     stbi_image_free(pixels);
     glBindTexture(GL_TEXTURE_2D, 0);

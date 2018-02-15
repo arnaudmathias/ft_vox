@@ -14,26 +14,30 @@ std::vector<glm::vec3> skyboxVertices = {
     {-1.0f, -1.0f, -1.0f}, {-1.0f, -1.0f, 1.0f},  {1.0f, -1.0f, -1.0f},
     {1.0f, -1.0f, -1.0f},  {-1.0f, -1.0f, 1.0f},  {1.0f, -1.0f, 1.0f}};
 
-Renderer::Renderer(void) {
-  _shader =
-      new Shader(ShaderType::NORMAL, "shaders/vox.vert", "shaders/vox.frag");
-}
+Renderer::Renderer(void) : Renderer(0, 0) {}
 
 Renderer::Renderer(int width, int height)
     : _width(width),
       _height(height),
+      _textureAtlas(nullptr),
+      _cubeMapTexture(nullptr),
       _cubeMapVao(nullptr),
       _cubeMapShader(nullptr) {
   _shader =
       new Shader(ShaderType::NORMAL, "shaders/vox.vert", "shaders/vox.frag");
+  //_textureAtlas = new Texture("textures/terrain.png");
+  _textureAtlas = new Texture("textures/terrain.jpg", 15, 15);
+  std::cout << "texture id: " << _textureAtlas->id << std::endl;
 }
 
 Renderer::Renderer(Renderer const &src) { *this = src; }
 
 Renderer::~Renderer(void) {
+  delete _textureAtlas;
   delete _shader;
   delete _cubeMapVao;
   delete _cubeMapShader;
+  delete _cubeMapTexture;
 }
 
 Renderer &Renderer::operator=(Renderer const &rhs) {
@@ -100,10 +104,7 @@ void Renderer::switchShader(GLuint shader_id, int &current_shader_id) {
 void Renderer::updateUniforms(const RenderAttrib &attrib, const int shader_id,
                               std::array<int, 4> &tex_channel) {
   if (shader_id > 0 && attrib.vaos.size() > 0) {
-    setUniform(glGetUniformLocation(shader_id, "iChannel0"), 0);
-    setUniform(glGetUniformLocation(shader_id, "iChannel1"), 1);
-    setUniform(glGetUniformLocation(shader_id, "iChannel2"), 2);
-    setUniform(glGetUniformLocation(shader_id, "iChannel3"), 3);
+    setUniform(glGetUniformLocation(shader_id, "texture_array"), 0);
     glm::mat4 mvp = this->uniforms.proj * this->uniforms.view * attrib.model;
     setUniform(glGetUniformLocation(shader_id, "MVP"), mvp);
     setUniform(glGetUniformLocation(shader_id, "P"), this->uniforms.proj);
@@ -120,9 +121,11 @@ void Renderer::draw() {
   for (const auto &attrib : this->_renderAttribs) {
     switchShader(_shader->id, shader_id);
     updateUniforms(attrib, _shader->id, tex_channel);
-    switchTextures({attrib.iChannel0, attrib.iChannel1, attrib.iChannel2,
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, _textureAtlas->id);
+    /*switchTextures({attrib.iChannel0, attrib.iChannel1, attrib.iChannel2,
                     attrib.iChannel3},
-                   tex_channel);
+                   tex_channel);*/
     for (const auto &vao : attrib.vaos) {
       glBindVertexArray(vao->vao);
       glDrawArrays(GL_TRIANGLES, 0, vao->vertices_size);

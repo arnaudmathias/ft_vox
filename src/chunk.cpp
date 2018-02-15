@@ -31,8 +31,8 @@ Chunk::Chunk(glm::ivec3 pos) : _pos(pos) {
   for (int y = 0; y < 256; y++) {
     for (int x = 0; x < 16; x++) {
       for (int z = 0; z < 16; z++) {
-        // if (y < 16 && x != 3 && y != 5)
-        set_block({Material::Dirt}, glm::ivec3(x, y, z));
+        if (y < 16 && x != 3 && y != 5)
+          set_block({Material::Dirt}, glm::ivec3(x, y, z));
       }
     }
   }
@@ -91,7 +91,6 @@ const std::vector<Vertex> getFace(glm::ivec3 pos, enum BlockSide side) {
   }
   return (vertices);
 }
-
 void Chunk::mesh() {
   size_t total_vertices = 0;
   enum BlockSide sides[4] = {BlockSide::Left, BlockSide::Right,
@@ -216,8 +215,8 @@ void ChunkManager::update(glm::vec3 player_pos) {
         /*
         chunk->second.set_block(
             {},
-            glm::ivec3(rand() % CHUNK_SIZE, rand() % 256, rand() % CHUNK_SIZE));
-        chunk->second.mesh(); */
+            glm::ivec3(rand() % CHUNK_SIZE, rand() % 256, rand() %
+        CHUNK_SIZE)); chunk->second.mesh(); */
       }
     }
   }
