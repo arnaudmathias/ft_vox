@@ -31,6 +31,7 @@ set(SOURCE_FILES
         src/camera.cpp
         src/vao.cpp
         src/texture.cpp
+        src/generator.cpp
         third-party/glad/glad.c)
 
 add_executable(ft_vox ${SOURCE_FILES})

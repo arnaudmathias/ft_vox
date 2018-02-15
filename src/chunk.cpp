@@ -28,11 +28,13 @@ Chunk::Chunk() : Chunk(glm::ivec3(0)) {}
 
 Chunk::Chunk(glm::ivec3 pos) : _pos(pos) {
   _renderAttrib.model = glm::translate(_pos);
-  for (int y = 0; y < 256; y++) {
-    for (int x = 0; x < 16; x++) {
-      for (int z = 0; z < 16; z++) {
-        if (y < 16 && x != 3 && y != 5)
-          set_block({Material::Dirt}, glm::ivec3(x, y, z));
+  for (int x = 0; x < 16; x++) {
+    for (int z = 0; z < 16; z++) {
+      float h =
+          fbm({glm::vec3(this->_pos.x + x, this->_pos.z + z, 0)}) * 0.5 + 0.5;
+      int height = round(h * 64.0);
+      for (int y = 0; y < height; y++) {
+        set_block({Material::Dirt}, glm::ivec3(x, y, z));
       }
     }
   }
@@ -177,7 +179,7 @@ inline void Chunk::set_block(Block block, glm::ivec3 index) {
   this->_dirty[index.y / MODEL_HEIGHT] = true;
 }
 
-ChunkManager::ChunkManager(void) : _renderDistance(0) {
+ChunkManager::ChunkManager(void) : _renderDistance(5) {
   glm::ivec2 pos(0);
   for (int x = -this->_renderDistance; x <= this->_renderDistance; x++) {
     for (int z = -this->_renderDistance; z <= this->_renderDistance; z++) {

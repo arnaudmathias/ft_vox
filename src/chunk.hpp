@@ -3,11 +3,13 @@
 #define CHUNK_HEIGHT 256
 #define MODEL_HEIGHT 16
 #define GLM_ENABLE_EXPERIMENTAL
+#include <cmath>
 #include <glm/glm.hpp>
 #include <iostream>
 #include <map>
 #include <unordered_map>
 #include <vector>
+#include "generator.hpp"
 #include "renderer.hpp"
 #include "vao.hpp"
 

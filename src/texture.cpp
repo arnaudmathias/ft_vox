@@ -47,7 +47,7 @@ Texture::Texture(std::string filename) : id(0), filename(filename) {
 
 Texture::Texture(std::string filename, int offset_x, int offset_y) {
   int texChannels;
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  // glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   stbi_set_flip_vertically_on_load(true);
   stbi_uc *pixels = stbi_load(filename.c_str(), &this->width, &this->height,
                               &texChannels, STBI_rgb);
