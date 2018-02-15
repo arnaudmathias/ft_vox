@@ -134,7 +134,7 @@ float simplex3D(glm::vec3 p) {
 
 float fbm(glm::vec3 st) {
   st *= 0.05;
-  const int OCTAVES = 10;
+  const int OCTAVES = 2;
   float value = 0.0f;
   float amplitude = 0.05f;
   float frequency = 0.0f;

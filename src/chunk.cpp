@@ -178,8 +178,9 @@ inline void Chunk::set_block(Block block, glm::ivec3 index) {
              index.z] = block;
   this->_dirty[index.y / MODEL_HEIGHT] = true;
 }
+glm::ivec3 Chunk::get_pos() { return (_pos); }
 
-ChunkManager::ChunkManager(void) : _renderDistance(5) {
+ChunkManager::ChunkManager(void) : _renderDistance(1) {
   glm::ivec2 pos(0);
   for (int x = -this->_renderDistance; x <= this->_renderDistance; x++) {
     for (int z = -this->_renderDistance; z <= this->_renderDistance; z++) {
@@ -208,18 +209,37 @@ ChunkManager& ChunkManager::operator=(ChunkManager const& rhs) {
 }
 
 void ChunkManager::update(glm::vec3 player_pos) {
-  glm::ivec2 pos(0);
+  glm::ivec2 pos =
+      glm::ivec2((static_cast<int>(round(player_pos.x)) -
+                  (static_cast<int>(round(player_pos.x)) % CHUNK_SIZE)),
+                 (static_cast<int>(round(player_pos.z)) -
+                  (static_cast<int>(round(player_pos.z)) % CHUNK_SIZE)));
+
+  size_t before_size = _chunks.size();
   for (int x = -this->_renderDistance; x <= this->_renderDistance; x++) {
     for (int z = -this->_renderDistance; z <= this->_renderDistance; z++) {
       glm::ivec2 chunk_pos(pos.x + x * CHUNK_SIZE, pos.y + z * CHUNK_SIZE);
       auto chunk = _chunks.find(chunk_pos);
-      if (chunk != _chunks.end()) {
-        /*
-        chunk->second.set_block(
-            {},
-            glm::ivec3(rand() % CHUNK_SIZE, rand() % 256, rand() %
-        CHUNK_SIZE)); chunk->second.mesh(); */
+      if (chunk == _chunks.end()) {
+        _chunks.emplace(chunk_pos, Chunk({chunk_pos.x, 0, chunk_pos.y}));
+        auto newchunk = _chunks.find(chunk_pos);
+        newchunk->second.mesh();
       }
+    }
+  }
+  if (before_size != _chunks.size()) {
+    std::cout << "Chunk manager added: " << _chunks.size() - before_size
+              << " chunks" << std::endl;
+  }
+  auto chunk_it = _chunks.begin();
+  while (chunk_it != _chunks.end()) {
+    auto old = chunk_it;
+    chunk_it++;
+    glm::ivec3 c_pos = old->second.get_pos();
+    if (round(glm::distance(glm::vec2(c_pos.x, c_pos.z), glm::vec2(pos))) /
+            CHUNK_SIZE >
+        static_cast<float>(this->_renderDistance) + 5) {
+      _chunks.erase(old);
     }
   }
 }

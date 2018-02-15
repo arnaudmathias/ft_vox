@@ -48,6 +48,7 @@ class Chunk {
   inline Block get_block(glm::ivec3 index);
   inline void set_block(Block block, glm::ivec3 index);
   const RenderAttrib& getRenderAttrib();
+  glm::ivec3 get_pos();
 
  private:
   Chunk(void);
