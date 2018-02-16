@@ -11,8 +11,8 @@ int main(int argc, char **argv) {
   Renderer renderer(1280, 720);
   Camera camera(glm::vec3(0.0, 70.0, 1.0), glm::vec3(0.0, 70.0, 0.0), 1280,
                 720);
-  bool wireframe = true;
-  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  bool wireframe = false;
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   while (!glfwWindowShouldClose(env.window)) {
     env.update();
     chunkManager.update(camera.pos);

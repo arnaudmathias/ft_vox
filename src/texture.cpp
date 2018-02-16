@@ -47,44 +47,36 @@ Texture::Texture(std::string filename) : id(0), filename(filename) {
 
 Texture::Texture(std::string filename, int offset_x, int offset_y) {
   int texChannels;
-  // glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  // stbi_set_flip_vertically_on_load(true);
   stbi_uc *pixels = stbi_load(filename.c_str(), &this->width, &this->height,
                               &texChannels, STBI_rgb_alpha);
-  std::cout << width << " | " << height << " ,texChannels: " << texChannels
-            << std::endl;
   if (pixels != nullptr) {
     glGenTextures(1, &this->id);
-
     glBindTexture(GL_TEXTURE_2D_ARRAY, this->id);
     int depth = (this->width / offset_x) * (this->height / offset_y);
     glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8, offset_x, offset_y, depth, 0,
                  GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    GL_DUMP_ERROR("glTexImage3D");
     int zoffset = 0;
+    unsigned char *sub_pixels =
+        new unsigned char[offset_x * offset_y * texChannels];
+    // Parse texture atlas and generate sub textures at each offset
     for (int y_atlas = 0; y_atlas < height; y_atlas += offset_y) {
       for (int x_atlas = 0; x_atlas < width; x_atlas += offset_x) {
-        unsigned char *data = new unsigned char[offset_x * offset_y * 4];
-        // std::cout << x_atlas << "|" << y_atlas << std::endl;
-        for (int y = 0; y < offset_y; y++) {
-          for (int x = 0; x < offset_x; x++) {
-            data[(x + y * offset_y)] =
-                pixels[(x_atlas + x + y_atlas * width + y)];
-            data[(x + y * offset_y) + 1] =
-                pixels[(x_atlas + x + y_atlas * width + y) + 1];
-            data[(x + y * offset_y) + 2] =
-                pixels[(x_atlas + x + y_atlas * width + y) + 2];
-            data[(x + y * offset_y) + 3] =
-                pixels[(x_atlas + x + y_atlas * width + y) + 3];
+        int target_offset = 0;
+        for (int y_local = y_atlas; y_local < y_atlas + offset_y; y_local++) {
+          for (int x_local = x_atlas; x_local < x_atlas + offset_x; x_local++) {
+            int source_offset =
+                (y_local * (width * texChannels) + (x_local * texChannels));
+            std::memcpy(sub_pixels + target_offset, pixels + source_offset,
+                        texChannels);
+            target_offset += texChannels;
           }
         }
         glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, zoffset, offset_x,
-                        offset_y, 1, GL_RGBA, GL_UNSIGNED_BYTE, data);
-        free(data);
+                        offset_y, 1, GL_RGBA, GL_UNSIGNED_BYTE, sub_pixels);
         zoffset++;
       }
     }
-    GL_DUMP_ERROR("glTexSubImage3D");
+    free(sub_pixels);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER,
                     GL_NEAREST_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
