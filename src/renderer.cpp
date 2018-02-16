@@ -26,7 +26,7 @@ Renderer::Renderer(int width, int height)
   _shader =
       new Shader(ShaderType::NORMAL, "shaders/vox.vert", "shaders/vox.frag");
   //_textureAtlas = new Texture("textures/terrain.png");
-  _textureAtlas = new Texture("textures/terrain.jpg", 15, 15);
+  _textureAtlas = new Texture("textures/terrain.png", 16, 16);
   std::cout << "texture id: " << _textureAtlas->id << std::endl;
 }
 
