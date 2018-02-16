@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 #include <iostream>
 #include <map>
+#include <queue>
 #include <unordered_map>
 #include <vector>
 #include "generator.hpp"
@@ -69,6 +70,10 @@ class ChunkManager {
   void setRenderDistance(unsigned char renderDistance);
 
  private:
+  void addChunkToQueue(glm::ivec2 chunk_pos);
+  void loadChunks();
+  void unloadChunks(glm::ivec2 current_chunk_pos);
   unsigned char _renderDistance;
   std::unordered_map<glm::ivec2, Chunk, ivec2Comparator> _chunks;
+  std::deque<glm::ivec2> to_load;  // FIFO Queue
 };

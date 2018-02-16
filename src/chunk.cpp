@@ -158,7 +158,7 @@ void Chunk::mesh() {
       this->_renderAttrib.vaos[model_id]->update(vertices);
     }
   }
-  std::cout << "Mesher: " << total_vertices << " vertices" << std::endl;
+  // std::cout << "Mesher: " << total_vertices << " vertices" << std::endl;
 };
 
 const RenderAttrib& Chunk::getRenderAttrib() { return (this->_renderAttrib); }
@@ -180,21 +180,14 @@ inline void Chunk::set_block(Block block, glm::ivec3 index) {
 }
 glm::ivec3 Chunk::get_pos() { return (_pos); }
 
-ChunkManager::ChunkManager(void) : _renderDistance(1) {
+ChunkManager::ChunkManager(void) : _renderDistance(10) {
   glm::ivec2 pos(0);
   for (int x = -this->_renderDistance; x <= this->_renderDistance; x++) {
     for (int z = -this->_renderDistance; z <= this->_renderDistance; z++) {
       glm::ivec2 chunk_pos(pos.x + x * CHUNK_SIZE, pos.y + z * CHUNK_SIZE);
-      auto chunk = _chunks.find(chunk_pos);
-      if (chunk == _chunks.end()) {
-        _chunks.emplace(chunk_pos, Chunk({chunk_pos.x, 0, chunk_pos.y}));
-        auto newchunk = _chunks.find(chunk_pos);
-        newchunk->second.mesh();
-      }
+      addChunkToQueue(pos);
     }
   }
-  std::cout << "Chunk manager load: " << _chunks.size() << " chunks"
-            << std::endl;
 }
 
 ChunkManager::ChunkManager(ChunkManager const& src) { *this = src; }
@@ -214,30 +207,51 @@ void ChunkManager::update(glm::vec3 player_pos) {
                   (static_cast<int>(round(player_pos.x)) % CHUNK_SIZE)),
                  (static_cast<int>(round(player_pos.z)) -
                   (static_cast<int>(round(player_pos.z)) % CHUNK_SIZE)));
-
-  size_t before_size = _chunks.size();
   for (int x = -this->_renderDistance; x <= this->_renderDistance; x++) {
     for (int z = -this->_renderDistance; z <= this->_renderDistance; z++) {
       glm::ivec2 chunk_pos(pos.x + x * CHUNK_SIZE, pos.y + z * CHUNK_SIZE);
-      auto chunk = _chunks.find(chunk_pos);
-      if (chunk == _chunks.end()) {
-        _chunks.emplace(chunk_pos, Chunk({chunk_pos.x, 0, chunk_pos.y}));
-        auto newchunk = _chunks.find(chunk_pos);
-        newchunk->second.mesh();
-      }
+      addChunkToQueue(chunk_pos);
     }
   }
-  if (before_size != _chunks.size()) {
-    std::cout << "Chunk manager added: " << _chunks.size() - before_size
-              << " chunks" << std::endl;
+  unloadChunks(pos);
+  loadChunks();
+}
+
+void ChunkManager::addChunkToQueue(glm::ivec2 chunk_pos) {
+  auto chunk = _chunks.find(chunk_pos);
+  if (chunk == _chunks.end()) {
+    bool found = false;
+    for (int i = 0; i < to_load.size(); i++) {
+      if (to_load[i] == chunk_pos) {
+        found = true;
+      }
+    }
+    if (found == false) {
+      to_load.push_back(chunk_pos);
+    }
   }
+}
+
+void ChunkManager::loadChunks() {
+  if (to_load.size() > 0) {
+    glm::ivec2 chunk_position = to_load.front();
+    _chunks.emplace(chunk_position,
+                    Chunk({chunk_position.x, 0, chunk_position.y}));
+    auto newchunk = _chunks.find(chunk_position);
+    newchunk->second.mesh();
+    to_load.pop_front();
+  }
+}
+
+void ChunkManager::unloadChunks(glm::ivec2 current_chunk_pos) {
   auto chunk_it = _chunks.begin();
   while (chunk_it != _chunks.end()) {
     auto old = chunk_it;
     chunk_it++;
     glm::ivec3 c_pos = old->second.get_pos();
-    if (round(glm::distance(glm::vec2(c_pos.x, c_pos.z), glm::vec2(pos))) /
-            CHUNK_SIZE >
+    float dist = glm::distance(glm::vec2(c_pos.x, c_pos.z),
+                               glm::vec2(current_chunk_pos));
+    if (round(dist) / CHUNK_SIZE >
         static_cast<float>(this->_renderDistance) + 5) {
       _chunks.erase(old);
     }
