@@ -1,4 +1,5 @@
 #pragma once
+#include <ft2build.h>
 #include <algorithm>
 #include <map>
 #include <vector>
@@ -7,6 +8,7 @@
 #include "shader.hpp"
 #include "texture.hpp"
 #include "vao.hpp"
+#include FT_FREETYPE_H
 
 class Shader;
 
@@ -49,6 +51,27 @@ struct RenderAttrib {
   bool operator<(const struct RenderAttrib& rhs) const;
 };
 
+class TextRenderer {
+  struct Character {
+    GLuint textureID;
+    glm::ivec2 size;
+    glm::ivec2 bearing;
+    GLuint advanceOffset;
+  };
+
+ public:
+  TextRenderer(void);
+  ~TextRenderer();
+  void renderText(float pos_x, float pos_y, float scale, std::string text,
+                  glm::vec3 color, glm::mat4 ortho);
+
+ private:
+  std::map<GLchar, Character> _characters;
+  GLuint _vao;
+  GLuint _vbo;
+  GLuint _shader_id;
+};
+
 class Renderer {
  public:
   Renderer(int width, int height);
@@ -56,6 +79,8 @@ class Renderer {
   virtual ~Renderer(void);
   Renderer& operator=(Renderer const& rhs);
   void addRenderAttrib(const RenderAttrib& renderAttrib);
+  void renderText(float pos_x, float pos_y, float scale, std::string text,
+                  glm::vec3 color);
   void draw();
   void flush();
   void reset();
@@ -64,6 +89,7 @@ class Renderer {
   void loadCubeMap(std::string vertex_sha, std::string fragment_sha,
                    const std::vector<std::string>& textures);
   Uniforms uniforms;
+  TextRenderer textRenderer;
 
  private:
   int _width;

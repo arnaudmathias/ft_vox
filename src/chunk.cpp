@@ -234,12 +234,16 @@ void ChunkManager::addChunkToQueue(glm::ivec2 chunk_pos) {
 
 void ChunkManager::loadChunks() {
   if (to_load.size() > 0) {
-    glm::ivec2 chunk_position = to_load.front();
-    _chunks.emplace(chunk_position,
-                    Chunk({chunk_position.x, 0, chunk_position.y}));
-    auto newchunk = _chunks.find(chunk_position);
-    newchunk->second.mesh();
-    to_load.pop_front();
+    int chunksPerFrame = 1;
+    for (int i = 0; i < chunksPerFrame; i++) {
+      if (to_load.size() == 0) break;
+      glm::ivec2 chunk_position = to_load.front();
+      _chunks.emplace(chunk_position,
+                      Chunk({chunk_position.x, 0, chunk_position.y}));
+      auto newchunk = _chunks.find(chunk_position);
+      newchunk->second.mesh();
+      to_load.pop_front();
+    }
   }
 }
 

@@ -11,6 +11,9 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
+add_subdirectory(third-party/freetype third-party/freetype/builds)
+include_directories(third-party/freetype/include)
+
 add_subdirectory(third-party/glfw)
 include_directories(third-party/glfw/include)
 include_directories(third-party/glad)
@@ -36,5 +39,4 @@ set(SOURCE_FILES
 
 add_executable(ft_vox ${SOURCE_FILES})
 
-target_link_libraries(ft_vox glfw ${GLFW_LIBRARIES})
-target_link_libraries(ft_vox ${OPENCL_LIBRARIES})
+target_link_libraries(ft_vox glfw freetype ${GLFW_LIBRARIES})
