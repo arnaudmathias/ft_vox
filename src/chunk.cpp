@@ -31,7 +31,7 @@ Chunk::Chunk(glm::ivec3 pos) : _pos(pos) {
   for (int x = 0; x < 16; x++) {
     for (int z = 0; z < 16; z++) {
       float h =
-          fbm({glm::vec3(this->_pos.x + x, this->_pos.z + z, 0)}) * 0.5 + 0.5;
+          fbm({glm::vec3(this->_pos.x + x, this->_pos.z + z, 0)}) * 0.5 + 0.5f;
       int height = round(h * 64.0);
       for (int y = 0; y < height; y++) {
         set_block({Material::Dirt}, glm::ivec3(x, y, z));
@@ -132,13 +132,15 @@ void Chunk::mesh() {
             auto quad = getFace({x, y, z}, BlockSide::Up);
             vertices.insert(vertices.end(), quad.begin(), quad.end());
           }
+          if (y == ((model_id + 1) * MODEL_HEIGHT) - 1 &&
+              current_block.material != Material::Air) {
+            auto quad = getFace({x, y, z}, BlockSide::Up);
+            vertices.insert(vertices.end(), quad.begin(), quad.end());
+          }
           if (current_block.material == Material::Air) {
             glm::ivec3 positions[4] = {
-                glm::ivec3(x - 1, y, z),
-                glm::ivec3(x + 1, y, z),
-                glm::ivec3(x, y + 1, z),
-                glm::ivec3(x, y - 1, z),
-            };
+                glm::ivec3(x - 1, y, z), glm::ivec3(x + 1, y, z),
+                glm::ivec3(x, y + 1, z), glm::ivec3(x, y - 1, z)};
             for (int f = 0; f < 4; f++) {
               Block b = get_block(positions[f]);
               if (b.material != Material::Air) {
