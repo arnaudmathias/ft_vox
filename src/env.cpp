@@ -1,12 +1,24 @@
 #include "env.hpp"
 
-Env::Env(int w, int h) : width(w), height(h), _frame(0) {
+Env::Env() : Env(0, 0) {}
+
+Env::Env(unsigned short width, unsigned short height)
+    : width(width), height(height), _frame(0) {
   if (!glfwInit()) return;
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  window = glfwCreateWindow(width, height, "ft_vox", NULL, NULL);
+  if (width == 0 && height == 0) {
+    GLFWmonitor *primary_monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode *mode = glfwGetVideoMode(primary_monitor);
+    this->width = mode->width;
+    this->height = mode->height;
+    window = glfwCreateWindow(this->width, this->height, "ft_vox",
+                              primary_monitor, NULL);
+  } else {
+    window = glfwCreateWindow(width, height, "ft_vox", NULL, NULL);
+  }
   if (!window) {
     std::cout << "Could not create window\n";
     glfwTerminate();

@@ -22,7 +22,8 @@ class Env {
  public:
   GLFWwindow *window;
   InputHandler inputHandler;
-  Env(int width, int height);
+  Env();
+  Env(unsigned short width, unsigned short height);
   ~Env();
 
   void update();  // Called once per frame

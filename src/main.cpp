@@ -23,13 +23,11 @@ void print_debug_info(Renderer &renderer, Camera &camera) {
 }
 
 int main(int argc, char **argv) {
-  int height = 720;
-  int width = 1280;
-  Env env(width, height);
+  Env env(1280, 720);
   ChunkManager chunkManager;
-  Renderer renderer(width, height);
-  Camera camera(glm::vec3(0.0, 70.0, 1.0), glm::vec3(0.0, 70.0, 0.0), width,
-                height);
+  Renderer renderer(env.width, env.height);
+  Camera camera(glm::vec3(0.0, 70.0, 1.0), glm::vec3(0.0, 70.0, 0.0), env.width,
+                env.height);
   bool wireframe = false;
   bool debugMode = false;
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
