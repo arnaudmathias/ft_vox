@@ -120,6 +120,7 @@ void Renderer::updateUniforms(const RenderAttrib &attrib, const int shader_id,
 }
 
 void Renderer::draw() {
+  _shader->reload();
   std::sort(_renderAttribs.begin(), _renderAttribs.end());
   int shader_id = -1;
   std::array<int, 4> tex_channel = {-1, -1, -1, -1};

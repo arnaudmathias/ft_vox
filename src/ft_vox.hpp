@@ -7,11 +7,13 @@
 
 struct Vertex {
   glm::vec4 position = {0, 0, 0, 0};
+  float texture_id = {0};
   Vertex() : position({0.0f, 0.0f, 0.0f, 0.0f}){};
   Vertex(Vertex const& src) { *this = src; }
   Vertex& operator=(Vertex const& rhs) {
     if (this != &rhs) {
       this->position = rhs.position;
+      this->texture_id = rhs.texture_id;
     }
     return (*this);
   };
