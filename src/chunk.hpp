@@ -47,6 +47,8 @@ class Chunk {
   Chunk& operator=(Chunk const& rhs);
 
   Block data[65536] = {};
+  glm::vec3 aabb_centers[CHUNK_HEIGHT / MODEL_HEIGHT];
+  glm::vec3 aabb_halfsizes[CHUNK_HEIGHT / MODEL_HEIGHT];
 
   void mesh();
 

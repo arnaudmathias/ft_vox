@@ -113,6 +113,25 @@ const std::vector<Vertex> getFace(const Block& block, glm::ivec3 pos,
   }
   return (vertices);
 }
+
+inline void init_aabb(int model_id, glm::ivec3& aabb_min,
+                      glm::ivec3& aabb_max) {
+  int center_pos = CHUNK_SIZE / 2;
+  int center_height = (model_id * MODEL_HEIGHT) + (MODEL_HEIGHT / 2);
+  aabb_min = glm::ivec3(center_pos, center_height, center_pos);
+  aabb_max = glm::ivec3(center_pos, center_height, center_pos);
+}
+
+inline void test_aabb(glm::ivec3 pos, glm::ivec3& aabb_min,
+                      glm::ivec3& aabb_max) {
+  if (pos.x < aabb_min.x) aabb_min.x = pos.x;
+  if (pos.x > aabb_max.x) aabb_max.x = pos.x;
+  if (pos.y < aabb_min.y) aabb_min.y = pos.y;
+  if (pos.y > aabb_max.y) aabb_max.y = pos.y;
+  if (pos.z < aabb_min.z) aabb_min.z = pos.z;
+  if (pos.z > aabb_max.z) aabb_max.z = pos.z;
+}
+
 void Chunk::mesh() {
   size_t total_vertices = 0;
   enum BlockSide sides[4] = {BlockSide::Left, BlockSide::Right,
@@ -120,12 +139,16 @@ void Chunk::mesh() {
   for (int model_id = 0; model_id < CHUNK_HEIGHT / MODEL_HEIGHT; model_id++) {
     if (_dirty[model_id] == false) continue;
     std::vector<Vertex> vertices;
+    glm::ivec3 aabb_min;
+    glm::ivec3 aabb_max;
+    init_aabb(model_id, aabb_min, aabb_max);
     for (int y = model_id * MODEL_HEIGHT; y < ((model_id + 1) * MODEL_HEIGHT);
          y++) {
       for (int x = 0; x < CHUNK_SIZE; x++) {
         Block current_block = {};
         for (int z = 0; z < CHUNK_SIZE; z++) {
           Block front_block = get_block({x, y, z});
+          test_aabb({x, y, z}, aabb_min, aabb_max);
           if (front_block != current_block) {
             Block b = front_block.material != Material::Air ? front_block
                                                             : current_block;
@@ -174,6 +197,11 @@ void Chunk::mesh() {
         }
       }
     }
+    glm::vec3 faabb_min = glm::vec3(aabb_min);
+    glm::vec3 faabb_max = glm::vec3(aabb_max);
+    this->aabb_centers[model_id] =
+        ((faabb_min + faabb_max) * 0.5f) + glm::vec3(_pos);
+    this->aabb_halfsizes[model_id] = (faabb_max - faabb_min) * 0.5f;
     _dirty[model_id] = false;
     total_vertices += vertices.size();
     if (this->_renderAttrib.vaos.size() <= model_id) {
@@ -288,11 +316,13 @@ void ChunkManager::unloadChunks(glm::ivec2 current_chunk_pos) {
 
 void ChunkManager::setRenderAttributes(Renderer& renderer,
                                        glm::vec3 player_pos) {
+  glm::mat4 view_proj = renderer.uniforms.proj * renderer.uniforms.view;
   glm::ivec2 pos =
       glm::ivec2((static_cast<int>(round(player_pos.x)) -
                   (static_cast<int>(round(player_pos.x)) % CHUNK_SIZE)),
                  (static_cast<int>(round(player_pos.z)) -
                   (static_cast<int>(round(player_pos.z)) % CHUNK_SIZE)));
+
   auto chunk_it = _chunks.begin();
   while (chunk_it != _chunks.end()) {
     glm::ivec3 c_pos = chunk_it->second.get_pos();
