@@ -70,7 +70,7 @@ class ChunkManager {
   ChunkManager& operator=(ChunkManager const& rhs);
 
   void update(glm::vec3 player_pos);
-  void setRenderAttributes(Renderer& renderer);
+  void setRenderAttributes(Renderer& renderer, glm::vec3 player_pos);
   void setRenderDistance(unsigned char renderDistance);
 
  private:

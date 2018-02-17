@@ -21,7 +21,10 @@ void main() {
                    dot(frag_normal.yzx, frag_pos));*/
   vec2 uv = fract(tileUV);
   vec3 ambient_color = vec4(texture(texture_array, vec3(uv, float(texture_id)))).rgb;
-
+  if (texture_id == 0.0f) {
+    vec3 biome_color = vec3(0.2, 0.5, 0.05);
+    ambient_color = mix(ambient_color, biome_color, 0.5); 
+  }
   vec3 color = 0.2 * (kdiff * light_color) + 0.8 * ambient_color;
   frag_color = vec4(color, 1.0);
 }

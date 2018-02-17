@@ -1,32 +1,32 @@
 #include "chunk.hpp"
 
 const std::vector<glm::vec3> cube_front = {
-    {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f},   {1.0f, 0.0f, 0.0f},
+    {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f},
     {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}};
 
 const std::vector<glm::vec3> cube_back = {
-    {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f},   {1.0f, 0.0f, 1.0f},
+    {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 1.0f},
     {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f}};
 
 const std::vector<glm::vec3> cube_left = {
-    {1.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f},   {1.0f, 1.0f, 0.0f},
+    {1.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f},
     {1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 1.0f}};
 
 const std::vector<glm::vec3> cube_right = {
-    {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f},   {0.0f, 1.0f, 0.0f},
+    {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 0.0f},
     {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}};
 
 const std::vector<glm::vec3> cube_bottom = {
-    {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 1.0f},   {1.0f, 0.0f, 0.0f},
+    {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f},
     {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}};
 
-const std::vector<glm::vec3> cube_up = {
-    {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f},   {1.0f, 1.0f, 0.0f},
-    {1.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 1.0f}};
+const std::vector<glm::vec3> cube_up = {{0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f},
+                                        {1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f},
+                                        {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 1.0f}};
 
 const Texture_lookup textures[4] = {{-1, -1, -1, -1, -1, -1},
                                     {1, 1, 1, 1, 1, 1},
-                                    {3, 3, 3, 3, 2, 2},
+                                    {3, 3, 3, 3, 2, 0},
                                     {18, 18, 18, 18, 18, 18}};
 
 Chunk::Chunk() : Chunk(glm::ivec3(0)) {}
@@ -286,10 +286,21 @@ void ChunkManager::unloadChunks(glm::ivec2 current_chunk_pos) {
   }
 }
 
-void ChunkManager::setRenderAttributes(Renderer& renderer) {
+void ChunkManager::setRenderAttributes(Renderer& renderer,
+                                       glm::vec3 player_pos) {
+  glm::ivec2 pos =
+      glm::ivec2((static_cast<int>(round(player_pos.x)) -
+                  (static_cast<int>(round(player_pos.x)) % CHUNK_SIZE)),
+                 (static_cast<int>(round(player_pos.z)) -
+                  (static_cast<int>(round(player_pos.z)) % CHUNK_SIZE)));
   auto chunk_it = _chunks.begin();
   while (chunk_it != _chunks.end()) {
-    renderer.addRenderAttrib(chunk_it->second.getRenderAttrib());
+    glm::ivec3 c_pos = chunk_it->second.get_pos();
+    float dist = glm::distance(glm::vec2(c_pos.x, c_pos.z), glm::vec2(pos));
+    if (round(dist) / CHUNK_SIZE <
+        static_cast<float>(this->_renderDistance + 1)) {
+      renderer.addRenderAttrib(chunk_it->second.getRenderAttrib());
+    }
     chunk_it++;
   }
 }
