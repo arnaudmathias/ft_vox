@@ -51,6 +51,7 @@ class Chunk {
   glm::vec3 aabb_halfsizes[CHUNK_HEIGHT / MODEL_HEIGHT];
 
   void mesh();
+  glm::ivec3 get_interval(glm::ivec3 pos, std::vector<glm::ivec2> interval_dimension[3], Block current_block);
 
   inline Block get_block(glm::ivec3 index);
   inline void set_block(Block block, glm::ivec3 index);
@@ -63,6 +64,8 @@ class Chunk {
   RenderAttrib _renderAttrib;
   glm::ivec3 _pos;
 };
+
+bool is_fill(std::vector<glm::ivec2> interval_dimension[3], glm::ivec3 pos);
 
 class ChunkManager {
  public:

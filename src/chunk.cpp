@@ -1,5 +1,26 @@
 #include "chunk.hpp"
 
+const std::vector<glm::vec3> cube = {
+
+    {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f},
+    {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f},
+
+    {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 1.0f},
+    {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f},
+
+    {1.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f},
+    {1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 1.0f},
+
+    {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 0.0f},
+    {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f},
+
+	{0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f},
+	{1.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 1.0f}
+
+};
+
+
+
 const std::vector<glm::vec3> cube_front = {
     {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f},
     {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}};
@@ -28,6 +49,15 @@ const Texture_lookup textures[4] = {{-1, -1, -1, -1, -1, -1},
                                     {1, 1, 1, 1, 1, 1},
                                     {3, 3, 3, 3, 2, 0},
                                     {18, 18, 18, 18, 18, 18}};
+
+
+std::vector<glm::vec3> get_scaled_cube(glm::vec3 scale) {
+	std::vector<glm::vec3> newcube = {};
+	for (int i = 0; i < cube.size(); i++) {
+		newcube.push_back(cube.at(i) * scale);
+	}
+	return newcube;
+}
 
 Chunk::Chunk() : Chunk(glm::ivec3(0)) {}
 
@@ -75,12 +105,13 @@ Chunk& Chunk::operator=(Chunk const& rhs) {
 }
 
 const std::vector<Vertex> getFace(const Block& block, glm::ivec3 pos,
-                                  enum BlockSide side) {
+                                  enum BlockSide side, glm::vec3 scale) {
   std::vector<Vertex> vertices;
   std::vector<glm::vec3> positions;
 
   int texture_id =
       textures[static_cast<int>(block.material)].side[static_cast<int>(side)];
+  
   switch (side) {
     case BlockSide::Front:
       positions.insert(positions.begin(), cube_front.begin(), cube_front.end());
@@ -104,6 +135,10 @@ const std::vector<Vertex> getFace(const Block& block, glm::ivec3 pos,
     default:
       break;
   }
+  for (int i = 0; i < positions.size(); i++) {
+  	positions.at(i) *= scale;
+  }
+ // positions = get_scaled_cube(scale);
   for (const auto& vertex_position : positions) {
     Vertex v;
     v.position = glm::vec4(vertex_position + glm::vec3(pos), 0.0f);
@@ -132,10 +167,65 @@ inline void test_aabb(glm::ivec3 pos, glm::ivec3& aabb_min,
   if (pos.z > aabb_max.z) aabb_max.z = pos.z;
 }
 
+glm::ivec3 Chunk::get_interval(glm::ivec3 pos, std::vector<glm::ivec2> interval_dimension[3], Block current_block) {
+	glm::ivec3 next_inter = glm::ivec3(9999);
+	glm::ivec3 save_pos = pos;
+	glm::ivec3 size = glm::ivec3(0);
+
+	Block front_block = get_block({pos.x, pos.y, pos.z});
+	while (pos.x < CHUNK_SIZE && pos.x < next_inter.x && front_block == current_block) {
+		front_block = get_block({pos.x, pos.y, pos.z});
+		size.x++;
+		pos.x++;
+	}
+	pos = save_pos;
+	front_block = get_block({pos.x, pos.y, pos.z});
+	while (pos.y < CHUNK_HEIGHT && pos.y < next_inter.y && front_block == current_block) {
+		while (size.x > 0 && pos.x - save_pos.x < size.x && front_block == current_block) {
+			front_block = get_block({pos.x, pos.y, pos.z});
+			pos.x++;
+		}
+		size.y++;
+		pos.x = save_pos.x;
+		pos.y++;
+	}
+	pos = save_pos;
+	front_block = get_block({pos.x, pos.y, pos.z});
+	while (pos.z < CHUNK_SIZE && pos.z < next_inter.z && front_block == current_block) {
+		while (size.y > 0 && pos.y - save_pos.y < size.y && front_block == current_block) {
+			while (size.x > 0 && pos.x - save_pos.x < size.x && front_block == current_block) {
+				front_block = get_block({pos.x, pos.y, pos.z});
+				pos.x++;
+			}
+			pos.x = save_pos.x;
+			pos.y++;
+		}
+		pos.z++;
+		size.z++;
+		pos.x = save_pos.x;
+		pos.y = save_pos.y;
+	}
+	std::cout << "size : " << size.x << " " << size.y << " " << size.z << std::endl;
+	return size;
+
+}
+
+bool is_fill(std::vector<glm::ivec2> interval_dimension[3], glm::ivec3 pos) {
+	for (int i = 0;  i < interval_dimension[0].size() ; ++i) {
+		if (interval_dimension[0].at(i).x <= pos.x && interval_dimension[0].at(i).y > pos.x &&
+			interval_dimension[1].at(i).x <= pos.y && interval_dimension[1].at(i).y > pos.y &&
+			interval_dimension[2].at(i).x <= pos.z && interval_dimension[2].at(i).y > pos.z)
+			return true;
+	}
+	return false;
+}
+
 void Chunk::mesh() {
   size_t total_vertices = 0;
   enum BlockSide sides[4] = {BlockSide::Left, BlockSide::Right,
                              BlockSide::Bottom, BlockSide::Up};
+  glm::ivec3 inter = glm::ivec3(0);
+  std::vector<glm::ivec2> interval_dimension[3] = {{}};
   for (int model_id = 0; model_id < CHUNK_HEIGHT / MODEL_HEIGHT; model_id++) {
     if (_dirty[model_id] == false) continue;
     std::vector<Vertex> vertices;
@@ -149,13 +239,28 @@ void Chunk::mesh() {
         for (int z = 0; z < CHUNK_SIZE; z++) {
           Block front_block = get_block({x, y, z});
           test_aabb({x, y, z}, aabb_min, aabb_max);
-          if (front_block != current_block) {
+          if (front_block != current_block && !is_fill(interval_dimension, {x, y, z})) {
             Block b = front_block.material != Material::Air ? front_block
                                                             : current_block;
-            auto quad = getFace(b, {x, y, z}, BlockSide::Front);
+			inter = get_interval(glm::ivec3(x, y, z), interval_dimension, b);
+			interval_dimension[0].push_back({x, x + inter.x});
+			interval_dimension[1].push_back({y, y + inter.y});
+			interval_dimension[2].push_back({z, z + inter.z});
+           	auto quad = getFace(b, {x, y, z}, BlockSide::Front, inter);
+            vertices.insert(vertices.end(), quad.begin(), quad.end());
+            quad = getFace(current_block, {x, y, z}, BlockSide::Right, inter);
+            vertices.insert(vertices.end(), quad.begin(), quad.end());
+            quad = getFace(current_block, {x, y, z}, BlockSide::Back, inter);
+            vertices.insert(vertices.end(), quad.begin(), quad.end());
+            quad = getFace(current_block, {x, y, z}, BlockSide::Left, inter);
+            vertices.insert(vertices.end(), quad.begin(), quad.end());
+            quad = getFace(current_block, {x, y, z}, BlockSide::Bottom, inter);
+            vertices.insert(vertices.end(), quad.begin(), quad.end());
+            quad = getFace(current_block, {x, y, z}, BlockSide::Up, inter);
             vertices.insert(vertices.end(), quad.begin(), quad.end());
             current_block = front_block;
           }
+		  /*
           if (z == CHUNK_SIZE - 1 && current_block.material != Material::Air) {
             auto quad = getFace(current_block, {x, y, z}, BlockSide::Back);
             vertices.insert(vertices.end(), quad.begin(), quad.end());
@@ -194,6 +299,7 @@ void Chunk::mesh() {
               }
             }
           }
+		  */
         }
       }
     }
