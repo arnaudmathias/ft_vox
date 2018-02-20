@@ -50,13 +50,69 @@ const Texture_lookup textures[4] = {{-1, -1, -1, -1, -1, -1},
                                     {3, 3, 3, 3, 2, 0},
                                     {18, 18, 18, 18, 18, 18}};
 
+const std::vector<Vertex> getFace(const Block& block, glm::ivec3 pos,
+                                  enum BlockSide side, glm::vec3 scale) {
+  std::vector<Vertex> vertices;
+  std::vector<glm::vec3> positions;
 
-std::vector<glm::vec3> get_scaled_cube(glm::vec3 scale) {
-	std::vector<glm::vec3> newcube = {};
-	for (int i = 0; i < cube.size(); i++) {
-		newcube.push_back(cube.at(i) * scale);
-	}
-	return newcube;
+  int texture_id =
+      textures[static_cast<int>(block.material)].side[static_cast<int>(side)];
+  
+  switch (side) {
+    case BlockSide::Front:
+      positions.insert(positions.begin(), cube_front.begin(), cube_front.end());
+      break;
+    case BlockSide::Back:
+      positions.insert(positions.begin(), cube_back.begin(), cube_back.end());
+      break;
+    case BlockSide::Left:
+      positions.insert(positions.begin(), cube_left.begin(), cube_left.end());
+      break;
+    case BlockSide::Right:
+      positions.insert(positions.begin(), cube_right.begin(), cube_right.end());
+      break;
+    case BlockSide::Bottom:
+      positions.insert(positions.begin(), cube_bottom.begin(),
+                       cube_bottom.end());
+      break;
+    case BlockSide::Up:
+      positions.insert(positions.begin(), cube_up.begin(), cube_up.end());
+      break;
+    default:
+      break;
+  }
+  for (int i = 0; i < positions.size(); i++) {
+  	positions.at(i) *= scale;
+  }
+ // positions = get_scaled_cube(scale);
+  for (const auto& vertex_position : positions) {
+    Vertex v;
+    v.position = glm::vec4(vertex_position + glm::vec3(pos), 0.0f);
+    v.position.w = static_cast<float>(side);
+    v.texture_id = static_cast<float>(texture_id);
+    vertices.push_back(v);
+  }
+  return (vertices);
+}
+
+std::vector<Vertex> get_scaled_cube(Block b, glm::vec3 scale, glm::ivec3 pos) {
+
+	std::vector<Vertex> vertices;
+
+	auto quad = getFace(b, pos, BlockSide::Front, scale);
+    vertices.insert(vertices.end(), quad.begin(), quad.end());
+	quad = getFace(b, pos, BlockSide::Right, scale);
+    vertices.insert(vertices.end(), quad.begin(), quad.end());
+	quad = getFace(b, pos, BlockSide::Back, scale);
+    vertices.insert(vertices.end(), quad.begin(), quad.end());
+    quad = getFace(b, pos, BlockSide::Left, scale);
+	vertices.insert(vertices.end(), quad.begin(), quad.end());
+    quad = getFace(b, pos, BlockSide::Bottom, scale);
+    vertices.insert(vertices.end(), quad.begin(), quad.end());
+    quad = getFace(b, pos, BlockSide::Up, scale);
+    vertices.insert(vertices.end(), quad.begin(), quad.end());
+
+	return vertices;
 }
 
 Chunk::Chunk() : Chunk(glm::ivec3(0)) {}
@@ -104,50 +160,7 @@ Chunk& Chunk::operator=(Chunk const& rhs) {
   return (*this);
 }
 
-const std::vector<Vertex> getFace(const Block& block, glm::ivec3 pos,
-                                  enum BlockSide side, glm::vec3 scale) {
-  std::vector<Vertex> vertices;
-  std::vector<glm::vec3> positions;
 
-  int texture_id =
-      textures[static_cast<int>(block.material)].side[static_cast<int>(side)];
-  
-  switch (side) {
-    case BlockSide::Front:
-      positions.insert(positions.begin(), cube_front.begin(), cube_front.end());
-      break;
-    case BlockSide::Back:
-      positions.insert(positions.begin(), cube_back.begin(), cube_back.end());
-      break;
-    case BlockSide::Left:
-      positions.insert(positions.begin(), cube_left.begin(), cube_left.end());
-      break;
-    case BlockSide::Right:
-      positions.insert(positions.begin(), cube_right.begin(), cube_right.end());
-      break;
-    case BlockSide::Bottom:
-      positions.insert(positions.begin(), cube_bottom.begin(),
-                       cube_bottom.end());
-      break;
-    case BlockSide::Up:
-      positions.insert(positions.begin(), cube_up.begin(), cube_up.end());
-      break;
-    default:
-      break;
-  }
-  for (int i = 0; i < positions.size(); i++) {
-  	positions.at(i) *= scale;
-  }
- // positions = get_scaled_cube(scale);
-  for (const auto& vertex_position : positions) {
-    Vertex v;
-    v.position = glm::vec4(vertex_position + glm::vec3(pos), 0.0f);
-    v.position.w = static_cast<float>(side);
-    v.texture_id = static_cast<float>(texture_id);
-    vertices.push_back(v);
-  }
-  return (vertices);
-}
 
 inline void init_aabb(int model_id, glm::ivec3& aabb_min,
                       glm::ivec3& aabb_max) {
@@ -246,60 +259,10 @@ void Chunk::mesh() {
 			interval_dimension[0].push_back({x, x + inter.x});
 			interval_dimension[1].push_back({y, y + inter.y});
 			interval_dimension[2].push_back({z, z + inter.z});
-           	auto quad = getFace(b, {x, y, z}, BlockSide::Front, inter);
-            vertices.insert(vertices.end(), quad.begin(), quad.end());
-            quad = getFace(current_block, {x, y, z}, BlockSide::Right, inter);
-            vertices.insert(vertices.end(), quad.begin(), quad.end());
-            quad = getFace(current_block, {x, y, z}, BlockSide::Back, inter);
-            vertices.insert(vertices.end(), quad.begin(), quad.end());
-            quad = getFace(current_block, {x, y, z}, BlockSide::Left, inter);
-            vertices.insert(vertices.end(), quad.begin(), quad.end());
-            quad = getFace(current_block, {x, y, z}, BlockSide::Bottom, inter);
-            vertices.insert(vertices.end(), quad.begin(), quad.end());
-            quad = getFace(current_block, {x, y, z}, BlockSide::Up, inter);
-            vertices.insert(vertices.end(), quad.begin(), quad.end());
-            current_block = front_block;
+			auto cube = get_scaled_cube(b, inter, {x, y, z});
+			vertices.insert(vertices.begin(), cube.begin(), cube.end());
+           	            current_block = front_block;
           }
-		  /*
-          if (z == CHUNK_SIZE - 1 && current_block.material != Material::Air) {
-            auto quad = getFace(current_block, {x, y, z}, BlockSide::Back);
-            vertices.insert(vertices.end(), quad.begin(), quad.end());
-          }
-          if (x == 0 && current_block.material != Material::Air) {
-            auto quad = getFace(current_block, {x, y, z}, BlockSide::Right);
-            vertices.insert(vertices.end(), quad.begin(), quad.end());
-          }
-          if (x == CHUNK_SIZE - 1 && current_block.material != Material::Air) {
-            auto quad = getFace(current_block, {x, y, z}, BlockSide::Left);
-            vertices.insert(vertices.end(), quad.begin(), quad.end());
-          }
-          if (y == 0 && current_block.material != Material::Air) {
-            auto quad = getFace(current_block, {x, y, z}, BlockSide::Bottom);
-            vertices.insert(vertices.end(), quad.begin(), quad.end());
-          }
-          if (y == CHUNK_HEIGHT - 1 &&
-              current_block.material != Material::Air) {
-            auto quad = getFace(current_block, {x, y, z}, BlockSide::Up);
-            vertices.insert(vertices.end(), quad.begin(), quad.end());
-          }
-          if (y == ((model_id + 1) * MODEL_HEIGHT) - 1 &&
-              current_block.material != Material::Air) {
-            auto quad = getFace(current_block, {x, y, z}, BlockSide::Up);
-            vertices.insert(vertices.end(), quad.begin(), quad.end());
-          }
-          if (current_block.material == Material::Air) {
-            glm::ivec3 positions[4] = {
-                glm::ivec3(x - 1, y, z), glm::ivec3(x + 1, y, z),
-                glm::ivec3(x, y + 1, z), glm::ivec3(x, y - 1, z)};
-            for (int f = 0; f < 4; f++) {
-              Block b = get_block(positions[f]);
-              if (b.material != Material::Air) {
-                auto quad = getFace(b, positions[f], sides[f]);
-                vertices.insert(vertices.end(), quad.begin(), quad.end());
-              }
-            }
-          }
-		  */
         }
       }
     }
