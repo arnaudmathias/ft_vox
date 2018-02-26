@@ -9,6 +9,7 @@
 #include <vector>
 #include "culling.hpp"
 #include "generator.hpp"
+#include "meshing.hpp"
 #include "renderer.hpp"
 #include "vao.hpp"
 
@@ -23,10 +24,6 @@ struct ivec2Comparator {
   }
 };
 
-struct Texture_lookup {
-  int side[6];
-};
-
 class Chunk {
  public:
   Chunk(glm::ivec3 pos);
@@ -35,13 +32,10 @@ class Chunk {
   Chunk& operator=(Chunk const& rhs);
 
   Block data[65536] = {};
-  glm::vec3 aabb_centers;
-  glm::vec3 aabb_halfsizes;
+  glm::vec3 aabb_center;
+  glm::vec3 aabb_halfsize;
 
   void mesh();
-  glm::ivec3 get_interval(glm::ivec3 pos,
-                          std::vector<glm::ivec2> interval_dimension[3],
-                          Block current_block);
 
   inline Block get_block(glm::ivec3 index);
   inline void set_block(Block block, glm::ivec3 index);

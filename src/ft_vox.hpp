@@ -19,6 +19,10 @@ struct Block {
   bool operator!=(const Block& rhs) const { return material != rhs.material; };
 };
 
+struct Texture_lookup {
+  int side[6];
+};
+
 struct Vertex {
   glm::vec4 position = {0, 0, 0, 0};
   float texture_id = {0};

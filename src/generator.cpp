@@ -138,7 +138,7 @@ float fbm(glm::vec3 st) {
   st *= 0.01;
   const int OCTAVES = 5;
   float value = 0.0f;
-  float amplitude = 0.2f;
+  float amplitude = 0.5f;
   float frequency = 0.0f;
   for (int i = 0; i < OCTAVES; i++) {
     value += amplitude * simplex3D(st);
