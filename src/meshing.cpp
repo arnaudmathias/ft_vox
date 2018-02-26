@@ -241,6 +241,85 @@ void greedy(Block *data, bool *dirty, RenderAttrib &render_attrib) {
   }
   // std::cout << "Mesher: " << total_vertices << " vertices" << std::endl;
 }
+void culling(Block *data, bool *dirty, RenderAttrib &render_attrib) {
+  size_t total_vertices = 0;
+  enum BlockSide sides[4] = {BlockSide::Left, BlockSide::Right,
+                             BlockSide::Bottom, BlockSide::Up};
+  for (int model_id = 0; model_id < CHUNK_HEIGHT / MODEL_HEIGHT; model_id++) {
+    if (dirty[model_id] == false) continue;
+    std::vector<Vertex> vertices;
+    for (int y = model_id * MODEL_HEIGHT; y < ((model_id + 1) * MODEL_HEIGHT);
+         y++) {
+      for (int x = 0; x < CHUNK_SIZE; x++) {
+        Block current_block = {};
+        for (int z = 0; z < CHUNK_SIZE; z++) {
+          Block front_block = get_block(data, {x, y, z});
+          if (front_block != current_block) {
+            Block b = front_block.material != Material::Air ? front_block
+                                                            : current_block;
+            auto quad =
+                getFace(b, {x, y, z}, BlockSide::Front, glm::vec3(1.0f));
+            vertices.insert(vertices.end(), quad.begin(), quad.end());
+            current_block = front_block;
+          }
+          if (z == CHUNK_SIZE - 1 && current_block.material != Material::Air) {
+            auto quad = getFace(current_block, {x, y, z}, BlockSide::Back,
+                                glm::vec3(1.0f));
+            vertices.insert(vertices.end(), quad.begin(), quad.end());
+          }
+          if (x == 0 && current_block.material != Material::Air) {
+            auto quad = getFace(current_block, {x, y, z}, BlockSide::Right,
+                                glm::vec3(1.0f));
+            vertices.insert(vertices.end(), quad.begin(), quad.end());
+          }
+          if (x == CHUNK_SIZE - 1 && current_block.material != Material::Air) {
+            auto quad = getFace(current_block, {x, y, z}, BlockSide::Left,
+                                glm::vec3(1.0f));
+            vertices.insert(vertices.end(), quad.begin(), quad.end());
+          }
+          if (y == 0 && current_block.material != Material::Air) {
+            auto quad = getFace(current_block, {x, y, z}, BlockSide::Bottom,
+                                glm::vec3(1.0f));
+            vertices.insert(vertices.end(), quad.begin(), quad.end());
+          }
+          if (y == CHUNK_HEIGHT - 1 &&
+              current_block.material != Material::Air) {
+            auto quad = getFace(current_block, {x, y, z}, BlockSide::Up,
+                                glm::vec3(1.0f));
+            vertices.insert(vertices.end(), quad.begin(), quad.end());
+          }
+          if (y == ((model_id + 1) * MODEL_HEIGHT) - 1 &&
+              current_block.material != Material::Air) {
+            auto quad = getFace(current_block, {x, y, z}, BlockSide::Up,
+                                glm::vec3(1.0f));
+            vertices.insert(vertices.end(), quad.begin(), quad.end());
+          }
+          if (current_block.material == Material::Air) {
+            glm::ivec3 positions[4] = {
+                glm::ivec3(x - 1, y, z), glm::ivec3(x + 1, y, z),
+                glm::ivec3(x, y + 1, z), glm::ivec3(x, y - 1, z)};
+            for (int f = 0; f < 4; f++) {
+              Block b = get_block(data, positions[f]);
+              if (b.material != Material::Air) {
+                auto quad = getFace(b, positions[f], sides[f], glm::vec3(1.0f));
+                vertices.insert(vertices.end(), quad.begin(), quad.end());
+              }
+            }
+          }
+        }
+      }
+    }
+    dirty[model_id] = false;
+    total_vertices += vertices.size();
+    if (vertices.size() > 0) {
+      if (render_attrib.vaos.size() <= model_id) {
+        render_attrib.vaos.push_back(new VAO(vertices));
+      } else {
+        render_attrib.vaos[model_id]->update(vertices);
+      }
+    }
+  }
+}
 
 void get_aabb(Block *data, glm::vec3 &aabb_center, glm::vec3 &aabb_halfsize,
               const glm::vec3 chunk_pos) {

@@ -35,7 +35,8 @@ Chunk& Chunk::operator=(Chunk const& rhs) {
 }
 
 void Chunk::mesh() {
-  mesher::greedy(data, _dirty, _renderAttrib);
+  // mesher::greedy(data, _dirty, _renderAttrib);
+  mesher::culling(data, _dirty, _renderAttrib);
   mesher::get_aabb(data, aabb_center, aabb_halfsize, _pos);
 };
 
