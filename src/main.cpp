@@ -34,7 +34,6 @@ int main(int argc, char **argv) {
   while (!glfwWindowShouldClose(env.window)) {
     env.update();
     chunkManager.update(camera.pos);
-    chunkManager.setRenderAttributes(renderer, camera.pos);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glfwPollEvents();
@@ -43,6 +42,7 @@ int main(int argc, char **argv) {
     camera.update();
     renderer.uniforms.view = camera.view;
     renderer.uniforms.proj = camera.proj;
+    chunkManager.setRenderAttributes(renderer, camera.pos);
     renderer.draw();
     renderer.flush();
     if (debugMode) {

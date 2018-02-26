@@ -241,8 +241,8 @@ glm::ivec3 Chunk::get_interval(glm::ivec3 pos,
     pos.x = save_pos.x;
     pos.y = save_pos.y;
   }
-  std::cout << "size : " << size.x << " " << size.y << " " << size.z
-	    << std::endl;
+  // std::cout << "size : " << size.x << " " << size.y << " " << size.z
+  //	    << std::endl;
   return size;
 }
 
@@ -349,7 +349,7 @@ ChunkManager& ChunkManager::operator=(ChunkManager const& rhs) {
   return (*this);
 }
 
-void ChunkManager::update(glm::vec3 player_pos) {
+void ChunkManager::update(const glm::vec3& player_pos) {
   glm::ivec2 pos =
       glm::ivec2((static_cast<int>(round(player_pos.x)) -
 		  (static_cast<int>(round(player_pos.x)) % CHUNK_SIZE)),
@@ -418,6 +418,7 @@ void ChunkManager::setRenderAttributes(Renderer& renderer,
 		  (static_cast<int>(round(player_pos.x)) % CHUNK_SIZE)),
 		 (static_cast<int>(round(player_pos.z)) -
 		  (static_cast<int>(round(player_pos.z)) % CHUNK_SIZE)));
+  frustrum_culling.updateViewPlanes(view_proj);
 
   auto chunk_it = _chunks.begin();
   while (chunk_it != _chunks.end()) {
@@ -425,7 +426,17 @@ void ChunkManager::setRenderAttributes(Renderer& renderer,
     float dist = glm::distance(glm::vec2(c_pos.x, c_pos.z), glm::vec2(pos));
     if (round(dist) / CHUNK_SIZE <
 	static_cast<float>(this->_renderDistance + 1)) {
-      renderer.addRenderAttrib(chunk_it->second.getRenderAttrib());
+      bool visible = false;
+      for (int i = 0; i < (CHUNK_HEIGHT / MODEL_HEIGHT); i++) {
+	if (frustrum_culling.cull(chunk_it->second.aabb_centers[i],
+				  chunk_it->second.aabb_halfsizes[i])) {
+	  visible = true;
+	  break;
+	}
+      }
+      if (visible) {
+	renderer.addRenderAttrib(chunk_it->second.getRenderAttrib());
+      }
     }
     chunk_it++;
   }

@@ -3,7 +3,7 @@ project(ft_vox)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
 
 find_package(OpenGL REQUIRED)
 

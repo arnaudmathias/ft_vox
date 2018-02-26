@@ -10,6 +10,7 @@
 #include <queue>
 #include <unordered_map>
 #include <vector>
+#include "culling.hpp"
 #include "generator.hpp"
 #include "renderer.hpp"
 #include "vao.hpp"
@@ -76,7 +77,7 @@ class ChunkManager {
   ~ChunkManager(void);
   ChunkManager& operator=(ChunkManager const& rhs);
 
-  void update(glm::vec3 player_pos);
+  void update(const glm::vec3& player_pos);
   void setRenderAttributes(Renderer& renderer, glm::vec3 player_pos);
   void setRenderDistance(unsigned char renderDistance);
 
@@ -87,4 +88,5 @@ class ChunkManager {
   unsigned char _renderDistance;
   std::unordered_map<glm::ivec2, Chunk, ivec2Comparator> _chunks;
   std::deque<glm::ivec2> to_load;  // FIFO Queue
+  FrustrumCulling frustrum_culling;
 };
