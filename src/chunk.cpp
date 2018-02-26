@@ -136,25 +136,9 @@ Chunk::Chunk() : Chunk(glm::ivec3(0)) {}
 
 Chunk::Chunk(glm::ivec3 pos) : _pos(pos) {
   _renderAttrib.model = glm::translate(_pos);
-  for (int x = 0; x < 16; x++) {
-    for (int z = 0; z < 16; z++) {
-      float h =
-	  fbm({glm::vec3(this->_pos.x + x, this->_pos.z + z, 0)}) * 0.5 + 1.0f;
-      int height = round(h * 64.0);
-      for (int y = 0; y < height; y++) {
-	Block block;
-	if (y == height - 1) {
-	  if (y < 67) {
-	    block.material = Material::Dirt;
-	  } else {
-	    block.material = Material::Stone;
-	  }
-	} else {
-	  block.material = Material::Dirt;
-	}
-	set_block(block, glm::ivec3(x, y, z));
-      }
-    }
+  generator::generate_chunk(this->data, glm::vec3(_pos));
+  for (int i = 0; i < MODEL_PER_CHUNK; i++) {
+    this->_dirty[i] = true;
   }
 }
 
@@ -170,9 +154,13 @@ Chunk& Chunk::operator=(Chunk const& rhs) {
   if (this != &rhs) {
     this->_pos = rhs._pos;
     std::memcpy(this->data, rhs.data, sizeof(this->data));
+    this->aabb_centers = rhs.aabb_centers;
+    this->aabb_halfsizes = rhs.aabb_halfsizes;
     this->_renderAttrib.vaos = rhs._renderAttrib.vaos;
     this->_renderAttrib.model = rhs._renderAttrib.model;
     std::memcpy(this->_dirty, rhs._dirty, sizeof(this->_dirty));
+    this->_renderAttrib = rhs._renderAttrib;
+    this->_pos = rhs._pos;
   }
   return (*this);
 }
@@ -300,10 +288,12 @@ void Chunk::mesh() {
     }
     _dirty[model_id] = false;
     total_vertices += vertices.size();
-    if (this->_renderAttrib.vaos.size() <= model_id) {
-      this->_renderAttrib.vaos.push_back(new VAO(vertices));
-    } else {
-      this->_renderAttrib.vaos[model_id]->update(vertices);
+    if (vertices.size() > 0) {
+      if (this->_renderAttrib.vaos.size() <= model_id) {
+	this->_renderAttrib.vaos.push_back(new VAO(vertices));
+      } else {
+	this->_renderAttrib.vaos[model_id]->update(vertices);
+      }
     }
   }
   glm::vec3 faabb_min = glm::vec3(aabb_min);

@@ -1,8 +1,4 @@
 #pragma once
-#define CHUNK_SIZE 16
-#define CHUNK_HEIGHT 256
-#define MODEL_HEIGHT 16
-#define MODEL_PER_CHUNK CHUNK_HEIGHT / MODEL_HEIGHT
 #define GLM_ENABLE_EXPERIMENTAL
 #include <cmath>
 #include <glm/glm.hpp>
@@ -27,18 +23,8 @@ struct ivec2Comparator {
   }
 };
 
-enum class BlockSide : unsigned int { Front, Back, Left, Right, Bottom, Up };
-
-enum class Material : unsigned char { Air, Stone, Dirt, Sand };
-
 struct Texture_lookup {
   int side[6];
-};
-
-struct Block {
-  enum Material material;
-  bool operator==(const Block& rhs) const { return material == rhs.material; };
-  bool operator!=(const Block& rhs) const { return material != rhs.material; };
 };
 
 class Chunk {

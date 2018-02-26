@@ -1,5 +1,7 @@
 #include "generator.hpp"
 
+namespace generator {
+
 float noise3D(glm::vec3 p) {
   float dummy;
   return std::modf(cos(glm::dot(p, glm::vec3(12.9898f, 78.233f, 128.852f))) *
@@ -145,3 +147,33 @@ float fbm(glm::vec3 st) {
   }
   return value;
 }
+
+void generate_chunk(Block *data, glm::vec3 chunk_pos) {
+  for (int x = 0; x < 16; x++) {
+    for (int z = 0; z < 16; z++) {
+      float h =
+          fbm(glm::vec3(chunk_pos.x + x, chunk_pos.z + z, 0.0f)) * 0.5f + 1.0f;
+      int height = round(h * 64.0f);
+      for (int y = 0; y < height; y++) {
+        Block block;
+        if (y == height - 1) {
+          if (y < 67) {
+            block.material = Material::Dirt;
+          } else {
+            block.material = Material::Stone;
+          }
+        } else {
+          block.material = Material::Dirt;
+        }
+        set_block(data, block, glm::ivec3(x, y, z));
+      }
+    }
+  }
+}
+
+inline void set_block(Block *data, Block block, glm::ivec3 index) {
+  data[index.y * CHUNK_SIZE * CHUNK_SIZE + index.x * CHUNK_SIZE + index.z] =
+      block;
+}
+
+}  // namespace generator

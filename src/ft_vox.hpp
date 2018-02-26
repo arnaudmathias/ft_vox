@@ -4,6 +4,20 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/euler_angles.hpp>
 #include <glm/gtx/transform.hpp>
+#define CHUNK_SIZE 16
+#define CHUNK_HEIGHT 256
+#define MODEL_HEIGHT 16
+#define MODEL_PER_CHUNK CHUNK_HEIGHT / MODEL_HEIGHT
+
+enum class BlockSide : unsigned int { Front, Back, Left, Right, Bottom, Up };
+
+enum class Material : unsigned char { Air, Stone, Dirt, Sand };
+
+struct Block {
+  enum Material material;
+  bool operator==(const Block& rhs) const { return material == rhs.material; };
+  bool operator!=(const Block& rhs) const { return material != rhs.material; };
+};
 
 struct Vertex {
   glm::vec4 position = {0, 0, 0, 0};
