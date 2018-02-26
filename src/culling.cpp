@@ -23,6 +23,7 @@ void FrustrumCulling::updateViewPlanes(const glm::mat4 &proj_view) {
 }
 
 bool FrustrumCulling::cull(const glm::vec3 &center, const glm::vec3 &halfsize) {
+  bool visible = true;
   for (int plane_id = 0; plane_id < 6; plane_id++) {
     glm::vec3 absPlane = glm::abs(glm::vec3(frustrum_planes[plane_id]));
     float d = dot(center, glm::vec3(frustrum_planes[plane_id]));

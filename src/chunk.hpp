@@ -2,6 +2,7 @@
 #define CHUNK_SIZE 16
 #define CHUNK_HEIGHT 256
 #define MODEL_HEIGHT 16
+#define MODEL_PER_CHUNK CHUNK_HEIGHT / MODEL_HEIGHT
 #define GLM_ENABLE_EXPERIMENTAL
 #include <cmath>
 #include <glm/glm.hpp>
@@ -48,8 +49,8 @@ class Chunk {
   Chunk& operator=(Chunk const& rhs);
 
   Block data[65536] = {};
-  glm::vec3 aabb_centers[CHUNK_HEIGHT / MODEL_HEIGHT];
-  glm::vec3 aabb_halfsizes[CHUNK_HEIGHT / MODEL_HEIGHT];
+  glm::vec3 aabb_centers;
+  glm::vec3 aabb_halfsizes;
 
   void mesh();
   glm::ivec3 get_interval(glm::ivec3 pos,

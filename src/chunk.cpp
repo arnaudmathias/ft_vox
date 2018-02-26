@@ -177,12 +177,17 @@ Chunk& Chunk::operator=(Chunk const& rhs) {
   return (*this);
 }
 
-inline void init_aabb(int model_id, glm::ivec3& aabb_min,
-		      glm::ivec3& aabb_max) {
-  int center_pos = CHUNK_SIZE / 2;
-  int center_height = (model_id * MODEL_HEIGHT) + (MODEL_HEIGHT / 2);
-  aabb_min = glm::ivec3(center_pos, center_height, center_pos);
-  aabb_max = glm::ivec3(center_pos, center_height, center_pos);
+inline void init_aabb(glm::vec3 aabb_center, glm::vec3 aabb_halfsize,
+		      glm::ivec3& aabb_min, glm::ivec3& aabb_max) {
+  if (aabb_center.x == 0.0f && aabb_center.y == 0.0f && aabb_center.z == 0.0f) {
+    int center_pos = CHUNK_SIZE / 2;
+    int center_height = (MODEL_HEIGHT / 2);
+    aabb_min = glm::ivec3(center_pos, center_height, center_pos);
+    aabb_max = glm::ivec3(center_pos, center_height, center_pos);
+  } else {
+    aabb_min = aabb_center - aabb_halfsize;
+    aabb_max = aabb_center + aabb_halfsize;
+  }
 }
 
 inline void test_aabb(glm::ivec3 pos, glm::ivec3& aabb_min,
@@ -265,12 +270,12 @@ void Chunk::mesh() {
 			     BlockSide::Bottom, BlockSide::Up};
   glm::ivec3 inter = glm::ivec3(0);
   std::vector<glm::ivec2> interval_dimension[3] = {{}};
-  for (int model_id = 0; model_id < CHUNK_HEIGHT / MODEL_HEIGHT; model_id++) {
+  glm::ivec3 aabb_min;
+  glm::ivec3 aabb_max;
+  init_aabb(this->aabb_centers, this->aabb_halfsizes, aabb_min, aabb_max);
+  for (int model_id = 0; model_id < MODEL_PER_CHUNK; model_id++) {
     if (_dirty[model_id] == false) continue;
     std::vector<Vertex> vertices;
-    glm::ivec3 aabb_min;
-    glm::ivec3 aabb_max;
-    init_aabb(model_id, aabb_min, aabb_max);
     for (int y = model_id * MODEL_HEIGHT; y < ((model_id + 1) * MODEL_HEIGHT);
 	 y++) {
       for (int x = 0; x < CHUNK_SIZE; x++) {
@@ -293,11 +298,6 @@ void Chunk::mesh() {
 	}
       }
     }
-    glm::vec3 faabb_min = glm::vec3(aabb_min);
-    glm::vec3 faabb_max = glm::vec3(aabb_max);
-    this->aabb_centers[model_id] =
-	((faabb_min + faabb_max) * 0.5f) + glm::vec3(_pos);
-    this->aabb_halfsizes[model_id] = (faabb_max - faabb_min) * 0.5f;
     _dirty[model_id] = false;
     total_vertices += vertices.size();
     if (this->_renderAttrib.vaos.size() <= model_id) {
@@ -306,6 +306,10 @@ void Chunk::mesh() {
       this->_renderAttrib.vaos[model_id]->update(vertices);
     }
   }
+  glm::vec3 faabb_min = glm::vec3(aabb_min);
+  glm::vec3 faabb_max = glm::vec3(aabb_max);
+  this->aabb_centers = ((faabb_min + faabb_max) * 0.5f) + glm::vec3(_pos);
+  this->aabb_halfsizes = (faabb_max - faabb_min) * 0.5f;
   // std::cout << "Mesher: " << total_vertices << " vertices" << std::endl;
 };
 
@@ -425,15 +429,8 @@ void ChunkManager::setRenderAttributes(Renderer& renderer,
     float dist = glm::distance(glm::vec2(c_pos.x, c_pos.z), glm::vec2(pos));
     if (round(dist) / CHUNK_SIZE <
 	static_cast<float>(this->_renderDistance + 1)) {
-      bool visible = false;
-      for (int i = 0; i < (CHUNK_HEIGHT / MODEL_HEIGHT); i++) {
-	if (frustrum_culling.cull(chunk_it->second.aabb_centers[i],
-				  chunk_it->second.aabb_halfsizes[i])) {
-	  visible = true;
-	  break;
-	}
-      }
-      if (visible) {
+      if (frustrum_culling.cull(chunk_it->second.aabb_centers,
+				chunk_it->second.aabb_halfsizes)) {
 	renderer.addRenderAttrib(chunk_it->second.getRenderAttrib());
       }
     }
