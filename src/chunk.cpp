@@ -412,13 +412,12 @@ void ChunkManager::unloadChunks(glm::ivec2 current_chunk_pos) {
 
 void ChunkManager::setRenderAttributes(Renderer& renderer,
 				       glm::vec3 player_pos) {
-  glm::mat4 view_proj = renderer.uniforms.proj * renderer.uniforms.view;
   glm::ivec2 pos =
       glm::ivec2((static_cast<int>(round(player_pos.x)) -
 		  (static_cast<int>(round(player_pos.x)) % CHUNK_SIZE)),
 		 (static_cast<int>(round(player_pos.z)) -
 		  (static_cast<int>(round(player_pos.z)) % CHUNK_SIZE)));
-  frustrum_culling.updateViewPlanes(view_proj);
+  frustrum_culling.updateViewPlanes(renderer.uniforms.view_proj);
 
   auto chunk_it = _chunks.begin();
   while (chunk_it != _chunks.end()) {

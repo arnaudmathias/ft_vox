@@ -15,38 +15,13 @@ class Shader;
 struct Uniforms {
   glm::mat4 view;
   glm::mat4 proj;
-  GLint location;
-  glm::vec3 iResolution;
-  float iTime;
-  float iTimeDelta;
-  float iFrame;
-  float iChannelTime[4];
-  glm::vec4 iMouse;
-  glm::vec4 iDate;
-  float iSampleRate;
-  glm::vec3 iChannelResolution[4];
-  glm::vec3 camPos;
-  glm::vec3 camDir;
-  glm::vec3 camUp;
-  glm::vec3 camRight;
-  float zFar;
-  float zNear;
-  float fovYscale;
-  /* samplerXX iChanneli; */
+  glm::mat4 view_proj;
 };
 
 struct RenderAttrib {
   std::vector<VAO*> vaos;
   glm::mat4 model;
-  Texture* iChannel0;
-  Texture* iChannel1;
-  Texture* iChannel2;
-  Texture* iChannel3;
-  RenderAttrib()
-      : iChannel0(nullptr),
-        iChannel1(nullptr),
-        iChannel2(nullptr),
-        iChannel3(nullptr){};
+  RenderAttrib(){};
 
   bool operator<(const struct RenderAttrib& rhs) const;
 };
@@ -102,12 +77,8 @@ class Renderer {
   Shader* _shader;
   Renderer(void);
   std::vector<RenderAttrib> _renderAttribs;
-  void bindTexture(Texture* texture, int& texture_binded, GLenum tex_slot);
-  void switchTextures(const std::array<Texture*, 4>& textures,
-                      std::array<int, 4>& tex_channel);
   void switchShader(GLuint shader_id, int& current_shader_id);
-  void updateUniforms(const RenderAttrib& attrib, const int shader_id,
-                      std::array<int, 4>& tex_channel);
+  void updateUniforms(const RenderAttrib& attrib, const int shader_id);
 };
 
 static inline void setUniform(const GLint& location, const float& data) {

@@ -42,6 +42,7 @@ int main(int argc, char **argv) {
     camera.update();
     renderer.uniforms.view = camera.view;
     renderer.uniforms.proj = camera.proj;
+    renderer.uniforms.view_proj = camera.proj * camera.view;
     chunkManager.setRenderAttributes(renderer, camera.pos);
     renderer.draw();
     renderer.flush();

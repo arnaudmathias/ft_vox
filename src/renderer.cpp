@@ -57,64 +57,20 @@ void Renderer::addRenderAttrib(const RenderAttrib &renderAttrib) {
   this->_renderAttribs.push_back(renderAttrib);
 }
 
-void Renderer::bindTexture(Texture *texture, int &texture_binded,
-                           GLenum tex_slot) {
-  if (texture != nullptr) {
-    if (texture->id != texture_binded && texture->id > 0) {
-      glActiveTexture(tex_slot);
-      glBindTexture(GL_TEXTURE_2D, texture->id);
-      texture_binded = texture->id;
-    }
-  } else {
-    glActiveTexture(tex_slot);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    texture_binded = -1;
-  }
-}
-
-void Renderer::switchTextures(const std::array<Texture *, 4> &textures,
-                              std::array<int, 4> &tex_channel) {
-  bindTexture(textures[0], tex_channel[0], GL_TEXTURE0);
-  bindTexture(textures[1], tex_channel[1], GL_TEXTURE1);
-  bindTexture(textures[2], tex_channel[2], GL_TEXTURE2);
-  bindTexture(textures[3], tex_channel[3], GL_TEXTURE3);
-}
-
 void Renderer::switchShader(GLuint shader_id, int &current_shader_id) {
   if (shader_id > 0 && shader_id != current_shader_id) {
     glUseProgram(shader_id);
-    setUniform(glGetUniformLocation(shader_id, "iResolution"),
-               this->uniforms.iResolution);
-    setUniform(glGetUniformLocation(shader_id, "iTime"), this->uniforms.iTime);
-    setUniform(glGetUniformLocation(shader_id, "iTimeDelta"),
-               this->uniforms.iTimeDelta);
-    setUniform(glGetUniformLocation(shader_id, "iFrame"),
-               this->uniforms.iFrame);
-    setUniform(glGetUniformLocation(shader_id, "iSampleRate"),
-               this->uniforms.iSampleRate);
-    setUniform(glGetUniformLocation(shader_id, "camPos"),
-               this->uniforms.camPos);
-    setUniform(glGetUniformLocation(shader_id, "camDir"),
-               this->uniforms.camDir);
-    setUniform(glGetUniformLocation(shader_id, "camRight"),
-               this->uniforms.camRight);
-    setUniform(glGetUniformLocation(shader_id, "camUp"), this->uniforms.camUp);
-    setUniform(glGetUniformLocation(shader_id, "fovYscale"),
-               this->uniforms.fovYscale);
-    setUniform(glGetUniformLocation(shader_id, "zNear"), this->uniforms.zNear);
-    setUniform(glGetUniformLocation(shader_id, "zFar"), this->uniforms.zFar);
+    setUniform(glGetUniformLocation(shader_id, "P"), this->uniforms.proj);
+    setUniform(glGetUniformLocation(shader_id, "V"), this->uniforms.view);
+    setUniform(glGetUniformLocation(shader_id, "texture_array"), 0);
     current_shader_id = shader_id;
   }
 }
 
-void Renderer::updateUniforms(const RenderAttrib &attrib, const int shader_id,
-                              std::array<int, 4> &tex_channel) {
+void Renderer::updateUniforms(const RenderAttrib &attrib, const int shader_id) {
   if (shader_id > 0 && attrib.vaos.size() > 0) {
-    setUniform(glGetUniformLocation(shader_id, "texture_array"), 0);
-    glm::mat4 mvp = this->uniforms.proj * this->uniforms.view * attrib.model;
+    glm::mat4 mvp = uniforms.view_proj * attrib.model;
     setUniform(glGetUniformLocation(shader_id, "MVP"), mvp);
-    setUniform(glGetUniformLocation(shader_id, "P"), this->uniforms.proj);
-    setUniform(glGetUniformLocation(shader_id, "V"), this->uniforms.view);
     setUniform(glGetUniformLocation(shader_id, "M"), attrib.model);
   }
 }
@@ -123,16 +79,12 @@ void Renderer::draw() {
   _shader->reload();
   std::sort(_renderAttribs.begin(), _renderAttribs.end());
   int shader_id = -1;
-  std::array<int, 4> tex_channel = {-1, -1, -1, -1};
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D_ARRAY, _textureAtlas->id);
+  switchShader(_shader->id, shader_id);
   for (const auto &attrib : this->_renderAttribs) {
-    switchShader(_shader->id, shader_id);
-    updateUniforms(attrib, _shader->id, tex_channel);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, _textureAtlas->id);
-    /*switchTextures({attrib.iChannel0, attrib.iChannel1, attrib.iChannel2,
-                    attrib.iChannel3},
-                   tex_channel);*/
+    updateUniforms(attrib, _shader->id);
     for (const auto &vao : attrib.vaos) {
       glBindVertexArray(vao->vao);
       glDrawArrays(GL_TRIANGLES, 0, vao->vertices_size);
