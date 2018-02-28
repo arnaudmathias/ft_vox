@@ -67,6 +67,7 @@ ChunkManager::ChunkManager(void) : _renderDistance(10) {
       addChunkToQueue(pos);
     }
   }
+  generator::init(42);
 }
 
 ChunkManager::ChunkManager(ChunkManager const& src) { *this = src; }

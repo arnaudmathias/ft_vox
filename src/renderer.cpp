@@ -77,7 +77,7 @@ void Renderer::updateUniforms(const RenderAttrib &attrib, const int shader_id) {
 
 void Renderer::draw() {
   _shader->reload();
-  std::sort(_renderAttribs.begin(), _renderAttribs.end());
+  // std::sort(_renderAttribs.begin(), _renderAttribs.end());
   int shader_id = -1;
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glActiveTexture(GL_TEXTURE0);
@@ -110,7 +110,11 @@ void Renderer::loadCubeMap(std::string vertex_sha, std::string fragment_sha,
 }
 
 bool RenderAttrib::operator<(const struct RenderAttrib &rhs) const {
-  return (this->vaos[0]->vao < rhs.vaos[0]->vao);
+  if (this->vaos[0] != nullptr && rhs.vaos[0] != nullptr) {
+    return (this->vaos[0]->vao < rhs.vaos[0]->vao);
+  } else {
+    return (true);
+  }
 }
 
 TextRenderer::TextRenderer(void) {
