@@ -4,7 +4,7 @@ namespace generator {
 
 std::vector<int> permutation;
 
-inline float noise2D(uint32_t seed, const glm::vec2 &v) {
+inline float noise2D(const glm::vec2 &v) {
   uint32_t s = static_cast<uint32_t>(v.x) * 1087;
   s ^= 0xE56FAA12;
   s += static_cast<uint32_t>(v.y) * 2749;
@@ -12,7 +12,7 @@ inline float noise2D(uint32_t seed, const glm::vec2 &v) {
   return (static_cast<float>(static_cast<int>(s % 2001) - 1000) / 1000.0f);
 }
 
-inline float noise3D(uint32_t seed, const glm::vec3 &v) {
+inline float noise3D(const glm::vec3 &v) {
   uint32_t s = static_cast<uint32_t>(v.x) * 1087;
   s ^= 0xE56FAA12;
   s += static_cast<uint32_t>(v.y) * 2749;
@@ -53,15 +53,18 @@ float grad(int hash, float x, float y, float z) {
 
 int inc(int num) {
   num++;
-  num %= 512;
+  num %= static_cast<uint32_t>(permutation.size());
   return num;
 }
 
-float gradientNoise3D(uint32_t seed, glm::vec3 pos) {
+float gradientNoise3D(glm::vec3 pos) {
   glm::vec3 p = pos;
-  p.x = fmod(fabs(pos.x), 512.0f);
-  p.y = fmod(fabs(pos.y), 512.0f);
-  p.z = fmod(fabs(pos.z), 512.0f);
+  p.x = fmod(fabs(pos.x + (permutation.size() / 2)),
+             static_cast<float>(permutation.size()));
+  p.y = fmod(fabs(pos.y + (permutation.size() / 2)),
+             static_cast<float>(permutation.size()));
+  p.z = fmod(fabs(pos.z + (permutation.size() / 2)),
+             static_cast<float>(permutation.size()));
   int xi = static_cast<int>(floor(p.x));
   int yi = static_cast<int>(floor(p.y));
   int zi = static_cast<int>(floor(p.z));
@@ -89,42 +92,40 @@ float gradientNoise3D(uint32_t seed, glm::vec3 pos) {
       lerp(grad(abb, xf, yf - 1, zf - 1), grad(bbb, xf - 1, yf - 1, zf - 1), u);
   y2 = lerp(x1, x2, v);
 
-  return (lerp(y1, y2, w) + 1) / 2;
-
-  /*
-  float v000 = noise3D(seed, glm::vec3(xi, yi, zi));
-  float v001 = noise3D(seed, glm::vec3(xi, yi, zi + 1.0f));
-  float v010 = noise3D(seed, glm::vec3(xi, yi + 1.0f, zi));
-  float v011 = noise3D(seed, glm::vec3(xi, yi + 1.0f, zi + 1.0f));
-  float v100 = noise3D(seed, glm::vec3(xi + 1.0f, yi, zi));
-  float v101 = noise3D(seed, glm::vec3(xi + 1.0f, yi, zi + 1.0f));
-  float v110 = noise3D(seed, glm::vec3(xi + 1.0f, yi + 1.0f, zi));
-  float v111 = noise3D(seed, glm::vec3(xi + 1.0f, yi + 1.0f, zi + 1.0f));
-  return (trilinear_lerp(v000, v001, v010, v011, v100, v101, v110, v111, xf, yf,
-                         zf));*/
+  return (lerp(y1, y2, w) + 1.0f) / 2.0f;
 }
 
-float gradientNoise2D(uint32_t seed, const glm::vec2 &pos) {
-  int xi = floor(pos.x);
-  int yi = floor(pos.y);
-  float xf = glm::fract(pos.x);
-  float yf = glm::fract(pos.y);
-  float v00 = noise2D(seed, glm::vec2(xi, yi));
-  float v01 = noise2D(seed, glm::vec2(xi, yi + 1.0f));
-  float v10 = noise2D(seed, glm::vec2(xi + 1.0f, yi));
-  float v11 = noise2D(seed, glm::vec2(xi + 1.0f, yi + 1.0f));
-  return (bilinear_lerp(v00, v10, v01, v11, xf, yf));
+float gradientNoise2D(const glm::vec2 &pos) {
+  glm::vec2 p = pos;
+  p.x = fmod(fabs(pos.x + (permutation.size() / 2)),
+             static_cast<float>(permutation.size()));
+  p.y = fmod(fabs(pos.y + (permutation.size() / 2)),
+             static_cast<float>(permutation.size()));
+  int xi = static_cast<int>(floor(p.x));
+  int yi = static_cast<int>(floor(p.y));
+  float xf = glm::fract(p.x);
+  float yf = glm::fract(p.y);
+  float u = fade(xf);
+  float v = fade(yf);
+  int aa, ab, ba, bb;
+  aa = permutation[permutation[xi] + yi];
+  ab = permutation[permutation[xi] + inc(yi)];
+  ba = permutation[permutation[inc(xi)] + yi];
+  bb = permutation[permutation[inc(xi)] + inc(yi)];
+  float x1, x2;
+  x1 = lerp(grad(aa, xf, yf, 0.0f), grad(ba, xf - 1, yf, 0.0f), u);
+  x2 = lerp(grad(ab, xf, yf - 1, 0.0f), grad(bb, xf - 1, yf - 1, 0.0f), u);
+  return ((lerp(x1, x2, v) + 1.0f)) / 2.0f;
 }
 
-float perlin3D(uint32_t seed, glm::vec3 v, const int octaves,
-               float persistence) {
-  v *= 0.01;
+float perlin3D(glm::vec3 v, const int octaves, float persistence, float scale) {
+  v *= scale;
   float value = 0.0f;
   float amplitude = 1.0f;
   float frequency = 1.0f;
   float total_amplitude = 0.0f;
   for (int i = 0; i < octaves; i++) {
-    value += amplitude * gradientNoise3D(seed, v * frequency);
+    value += amplitude * gradientNoise3D(v * frequency);
     total_amplitude += amplitude;
     amplitude *= persistence;
     frequency *= 2.0f;
@@ -132,15 +133,14 @@ float perlin3D(uint32_t seed, glm::vec3 v, const int octaves,
   return (value / total_amplitude);
 }
 
-float perlin2D(uint32_t seed, glm::vec2 v, const int octaves,
-               float persistence) {
-  v *= 0.01;
+float perlin2D(glm::vec2 v, const int octaves, float persistence, float scale) {
+  v *= scale;
   float value = 0.0f;
   float amplitude = 1.0f;
   float frequency = 1.0f;
   float total_amplitude = 0.0f;
   for (int i = 0; i < octaves; i++) {
-    value += amplitude * gradientNoise2D(seed, v * frequency);
+    value += amplitude * gradientNoise2D(v * frequency);
     total_amplitude += amplitude;
     amplitude *= persistence;
     frequency *= 2.0f;
@@ -151,8 +151,8 @@ float perlin2D(uint32_t seed, glm::vec2 v, const int octaves,
 void generate_chunk(Block *data, glm::vec3 pos) {
   for (int x = 0; x < 16; x++) {
     for (int z = 0; z < 16; z++) {
-      float h_map = perlin3D(0, glm::vec3(pos.x + x, pos.z + z, 0.0f), 6, 0.5f);
-      int height = round(64.0f * h_map);
+      float h_map = perlin2D(glm::vec2(pos.x + x, pos.z + z), 6, 0.5f, 0.01f);
+      int height = round(128.0f * h_map);
       for (int y = 0; y < height; y++) {
         Block block;
         if (y == height - 1) {
@@ -164,11 +164,11 @@ void generate_chunk(Block *data, glm::vec3 pos) {
         } else {
           block.material = Material::Dirt;
         }
-        /*float h_cave = fbm(glm::vec3(pos.x + x, pos.y + y, pos.z + z),
-                           glm::vec3(0.05f, 0.05f, 0.05f));
-        if (h_cave < 0.0) {*/
-        set_block(data, block, glm::ivec3(x, y, z));
-        //}
+        float h_cave = perlin3D(glm::vec3(pos.x + x, pos.y + y, pos.z + z), 6,
+                                0.9f, 0.001f);
+        if (h_cave < 0.63) {
+          set_block(data, block, glm::ivec3(x, y, z));
+        }
       }
     }
   }
@@ -179,8 +179,8 @@ inline void set_block(Block *data, Block block, glm::ivec3 index) {
       block;
 }
 
-void init(uint32_t seed) {
-  permutation.resize(256);
+void init(uint32_t size, uint32_t seed) {
+  permutation.resize(size / 2);
   std::iota(permutation.begin(), permutation.end(), 0);
   std::default_random_engine engine(seed);
   std::shuffle(permutation.begin(), permutation.end(), engine);
