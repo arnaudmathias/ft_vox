@@ -155,14 +155,10 @@ void generate_chunk(Block *data, glm::vec3 pos) {
       int height = round(128.0f * h_map);
       for (int y = 0; y < height; y++) {
         Block block;
-        if (y == height - 1) {
-          if (y < 67) {
-            block.material = Material::Dirt;
-          } else {
-            block.material = Material::Stone;
-          }
-        } else {
+        if (y < 67) {
           block.material = Material::Dirt;
+        } else {
+          block.material = Material::Stone;
         }
         float h_cave = perlin3D(glm::vec3(pos.x + x, pos.y + y, pos.z + z), 6,
                                 0.9f, 0.001f);

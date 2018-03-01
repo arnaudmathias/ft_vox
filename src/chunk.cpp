@@ -59,7 +59,9 @@ inline void Chunk::set_block(Block block, glm::ivec3 index) {
 }
 glm::ivec3 Chunk::get_pos() { return (_pos); }
 
-ChunkManager::ChunkManager(void) : _renderDistance(10) {
+ChunkManager::ChunkManager(void) : ChunkManager(42) {}
+
+ChunkManager::ChunkManager(uint32_t seed) : _renderDistance(10), _seed(seed) {
   glm::ivec2 pos(0);
   for (int x = -this->_renderDistance; x <= this->_renderDistance; x++) {
     for (int z = -this->_renderDistance; z <= this->_renderDistance; z++) {
@@ -67,7 +69,13 @@ ChunkManager::ChunkManager(void) : _renderDistance(10) {
       addChunkToQueue(pos);
     }
   }
-  generator::init(10000, 42);
+  generator::init(10000, _seed);
+  if (io::exists("world") == false) {
+    io::makedir("world");
+  }
+  if (io::exists("world/" + std::to_string(_seed)) == false) {
+    io::makedir("world/" + std::to_string(_seed));
+  }
 }
 
 ChunkManager::ChunkManager(ChunkManager const& src) { *this = src; }
@@ -112,12 +120,22 @@ void ChunkManager::addChunkToQueue(glm::ivec2 chunk_pos) {
   }
 }
 
+std::string ChunkManager::getRegionFilename(glm::ivec2 pos) {
+  std::string filename = "world/" + std::to_string(_seed) + "/r." +
+			 std::to_string(pos.x / REGION_SIZE) + "." +
+			 std::to_string(pos.y / REGION_SIZE) + ".vox";
+  return (filename);
+}
+
 void ChunkManager::loadChunks() {
   if (to_load.size() > 0) {
     int chunksPerFrame = 1;
     for (int i = 0; i < chunksPerFrame; i++) {
       if (to_load.size() == 0) break;
       glm::ivec2 chunk_position = to_load.front();
+      // std::cout << chunk_position.x << "|" << chunk_position.y << std::endl;
+      //
+      // std::cout << getRegionFilename(chunk_position) << std::endl;
       _chunks.emplace(chunk_position,
 		      Chunk({chunk_position.x, 0, chunk_position.y}));
       auto newchunk = _chunks.find(chunk_position);
@@ -137,6 +155,8 @@ void ChunkManager::unloadChunks(glm::ivec2 current_chunk_pos) {
 			       glm::vec2(current_chunk_pos));
     if (round(dist) / CHUNK_SIZE >
 	static_cast<float>(this->_renderDistance) + 5) {
+      io::writeRegionFile(getRegionFilename(old->first), old->first,
+			  old->second.data);
       _chunks.erase(old);
     }
   }

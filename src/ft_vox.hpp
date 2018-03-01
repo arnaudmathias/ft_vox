@@ -8,6 +8,10 @@
 #define CHUNK_SIZE 16
 #define CHUNK_HEIGHT 256
 #define MODEL_HEIGHT 16
+#define REGION_SIZE 16
+#define CHUNK_PER_REGION REGION_SIZE* REGION_SIZE
+#define REGION_LOOKUPTABLE_SIZE CHUNK_PER_REGION * 4
+#define CHUNK_OFFSET 4096
 #define MODEL_PER_CHUNK CHUNK_HEIGHT / MODEL_HEIGHT
 
 enum class BlockSide : unsigned int { Front, Back, Left, Right, Bottom, Up };

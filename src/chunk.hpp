@@ -9,6 +9,7 @@
 #include <vector>
 #include "culling.hpp"
 #include "generator.hpp"
+#include "io.hpp"
 #include "meshing.hpp"
 #include "renderer.hpp"
 #include "vao.hpp"
@@ -49,11 +50,10 @@ class Chunk {
   glm::ivec3 _pos;
 };
 
-bool is_fill(std::vector<glm::ivec2> interval_dimension[3], glm::ivec3 pos);
-
 class ChunkManager {
  public:
   ChunkManager(void);
+  ChunkManager(uint32_t seed);
   ChunkManager(ChunkManager const& src);
   ~ChunkManager(void);
   ChunkManager& operator=(ChunkManager const& rhs);
@@ -66,8 +66,10 @@ class ChunkManager {
   void addChunkToQueue(glm::ivec2 chunk_pos);
   void loadChunks();
   void unloadChunks(glm::ivec2 current_chunk_pos);
+  std::string getRegionFilename(glm::ivec2 pos);
   unsigned char _renderDistance;
   std::unordered_map<glm::ivec2, Chunk, ivec2Comparator> _chunks;
   std::deque<glm::ivec2> to_load;  // FIFO Queue
   FrustrumCulling frustrum_culling;
+  uint32_t _seed;
 };

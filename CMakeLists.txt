@@ -37,6 +37,7 @@ set(SOURCE_FILES
         src/generator.cpp
         src/culling.cpp
         src/meshing.cpp
+        src/io.cpp
         third-party/glad/glad.c)
 
 add_executable(ft_vox ${SOURCE_FILES})
