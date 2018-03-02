@@ -37,6 +37,7 @@ class Chunk {
   glm::vec3 aabb_halfsize;
 
   void mesh();
+  void generate();
 
   inline Block get_block(glm::ivec3 index);
   inline void set_block(Block block, glm::ivec3 index);
@@ -64,12 +65,19 @@ class ChunkManager {
 
  private:
   void addChunkToQueue(glm::ivec2 chunk_pos);
+  void addRegionToQueue(glm::ivec2 chunk_pos);
   void loadChunks();
   void unloadChunks(glm::ivec2 current_chunk_pos);
+  void loadRegion(glm::ivec2 region_pos);
+  void unloadRegion(glm::ivec2 region_pos);
   std::string getRegionFilename(glm::ivec2 pos);
   unsigned char _renderDistance;
   std::unordered_map<glm::ivec2, Chunk, ivec2Comparator> _chunks;
   std::deque<glm::ivec2> to_load;  // FIFO Queue
+  std::deque<glm::ivec2> to_mesh;
+  std::deque<glm::ivec2> to_generate;
+  std::map<std::string, std::deque<glm::ivec2>> load_chunks;
+  std::map<std::string, std::deque<glm::ivec2>> unload_chunks;
   FrustrumCulling frustrum_culling;
   uint32_t _seed;
 };
