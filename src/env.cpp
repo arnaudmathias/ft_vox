@@ -71,9 +71,10 @@ void Env::updateFpsCounter() {
   double elapsed_seconds = current_seconds - previous_seconds;
   if (elapsed_seconds > 0.25) {
     previous_seconds = current_seconds;
-    double fps = static_cast<double>(frame_count) / elapsed_seconds;
+    this->_fps =
+        static_cast<float>(frame_count) / static_cast<float>(elapsed_seconds);
     std::ostringstream tmp;
-    tmp << fps << " fps";
+    tmp << _fps << " fps";
     glfwSetWindowTitle(window, tmp.str().c_str());
     frame_count = 0;
   }
@@ -85,6 +86,8 @@ float Env::getDeltaTime() { return (this->_deltaTime); }
 float Env::getAbsoluteTime() { return (this->_absoluteTime); }
 
 float Env::getFrame() { return (this->_frame); }
+
+float Env::getFPS() { return (this->_fps); }
 
 void keyCallback(GLFWwindow *window, int key, int scancode, int action,
                  int mode) {

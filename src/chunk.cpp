@@ -293,6 +293,7 @@ void ChunkManager::setRenderAttributes(Renderer& renderer,
 		  (static_cast<int>(round(player_pos.z)) % CHUNK_SIZE)));
   frustrum_culling.updateViewPlanes(renderer.uniforms.view_proj);
 
+  _debug_chunks_rendered = 0;
   auto chunk_it = _chunks.begin();
   while (chunk_it != _chunks.end()) {
     glm::ivec3 c_pos = chunk_it->second.get_pos();
@@ -302,6 +303,7 @@ void ChunkManager::setRenderAttributes(Renderer& renderer,
       if (frustrum_culling.cull(chunk_it->second.aabb_center,
 				chunk_it->second.aabb_halfsize)) {
 	renderer.addRenderAttrib(chunk_it->second.getRenderAttrib());
+	_debug_chunks_rendered++;
       }
     }
     chunk_it++;
@@ -310,4 +312,29 @@ void ChunkManager::setRenderAttributes(Renderer& renderer,
 
 void ChunkManager::setRenderDistance(unsigned char rd) {
   this->_renderDistance = rd;
+}
+
+void ChunkManager::increaseRenderDistance() {
+  if (this->_renderDistance + 1 <= 20) this->_renderDistance++;
+}
+
+void ChunkManager::decreaseRenderDistance() {
+  if (this->_renderDistance - 1 > 0) this->_renderDistance--;
+}
+
+void ChunkManager::print_chunkmanager_info(Renderer& renderer, float fheight,
+					   float fwidth) {
+  renderer.renderText(
+      10.0f, fheight - 75.0f, 0.35f,
+      "chunks: " + std::to_string(_chunks.size()) +
+	  ", rendered: " + std::to_string(_debug_chunks_rendered),
+      glm::vec3(1.0f, 1.0f, 1.0f));
+  renderer.renderText(10.0f, fheight - 100.0f, 0.35f,
+		      "queue: mesh(" + std::to_string(to_mesh.size()) +
+			  ") generate(" + std::to_string(to_generate.size()) +
+			  ") unload(" + std::to_string(to_unload.size()) + ")",
+		      glm::vec3(1.0f, 1.0f, 1.0f));
+  renderer.renderText(10.0f, fheight - 125.0f, 0.35f,
+		      "render distance: " + std::to_string(_renderDistance),
+		      glm::vec3(1.0f, 1.0f, 1.0f));
 }

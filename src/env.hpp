@@ -30,6 +30,7 @@ class Env {
   float getDeltaTime();
   float getAbsoluteTime();
   float getFrame();
+  float getFPS();
   int width;
   int height;
 
@@ -39,6 +40,7 @@ class Env {
   float _absoluteTime;
   float _deltaTime;
   float _frame;
+  float _fps;
 };
 
 void keyCallback(GLFWwindow *window, int key, int scancode, int action,

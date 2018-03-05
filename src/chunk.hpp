@@ -63,6 +63,10 @@ class ChunkManager {
   void update(const glm::vec3& player_pos);
   void setRenderAttributes(Renderer& renderer, glm::vec3 player_pos);
   void setRenderDistance(unsigned char renderDistance);
+  void print_chunkmanager_info(Renderer& renderer, float window_height,
+                               float window_width);
+  void increaseRenderDistance();
+  void decreaseRenderDistance();
 
  private:
   void addRegionToQueue(glm::ivec2 chunk_pos);
@@ -79,4 +83,5 @@ class ChunkManager {
   std::map<std::string, std::deque<glm::ivec2>> unload_chunks;
   FrustrumCulling frustrum_culling;
   uint32_t _seed;
+  size_t _debug_chunks_rendered;
 };
