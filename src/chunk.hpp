@@ -6,6 +6,7 @@
 #include <map>
 #include <queue>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include "culling.hpp"
 #include "generator.hpp"
@@ -64,18 +65,16 @@ class ChunkManager {
   void setRenderDistance(unsigned char renderDistance);
 
  private:
-  void addChunkToQueue(glm::ivec2 chunk_pos);
   void addRegionToQueue(glm::ivec2 chunk_pos);
-  void loadChunks();
-  void unloadChunks(glm::ivec2 current_chunk_pos);
   void loadRegion(glm::ivec2 region_pos);
   void unloadRegion(glm::ivec2 region_pos);
+  void unloadRegions(glm::ivec2 current_chunk_pos);
   std::string getRegionFilename(glm::ivec2 pos);
   unsigned char _renderDistance;
   std::unordered_map<glm::ivec2, Chunk, ivec2Comparator> _chunks;
-  std::deque<glm::ivec2> to_load;  // FIFO Queue
   std::deque<glm::ivec2> to_mesh;
   std::deque<glm::ivec2> to_generate;
+  std::deque<glm::ivec2> to_unload;
   std::map<std::string, std::deque<glm::ivec2>> load_chunks;
   std::map<std::string, std::deque<glm::ivec2>> unload_chunks;
   FrustrumCulling frustrum_culling;

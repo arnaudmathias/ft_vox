@@ -116,6 +116,7 @@ inline unsigned int getNearestIdx(glm::vec2 position,
 }
 
 void ChunkManager::update(const glm::vec3& player_pos) {
+  // Find nearest chunk and gen it
   if (to_generate.size() > 0) {
     unsigned int nearest_idx =
 	getNearestIdx(glm::vec2(player_pos.x, player_pos.z), to_generate);
@@ -126,6 +127,7 @@ void ChunkManager::update(const glm::vec3& player_pos) {
     }
     to_generate.erase(to_generate.begin() + nearest_idx);
   }
+  // Find nearest chunk and mesh it
   if (to_mesh.size() > 0) {
     unsigned int nearest_idx =
 	getNearestIdx(glm::vec2(player_pos.x, player_pos.z), to_mesh);
@@ -135,6 +137,7 @@ void ChunkManager::update(const glm::vec3& player_pos) {
     }
     to_mesh.erase(to_mesh.begin() + nearest_idx);
   }
+  // Add regions within renderDistance
   glm::ivec2 player_chunk_pos =
       glm::ivec2((static_cast<int>(round(player_pos.x)) -
 		  (static_cast<int>(round(player_pos.x)) % CHUNK_SIZE)),
@@ -149,29 +152,19 @@ void ChunkManager::update(const glm::vec3& player_pos) {
       addRegionToQueue(region_pos);
     }
   }
-  /*unloadChunks(player_chunk_pos);
-  loadChunks(); */
+  // Unload regions
+  unloadRegions(player_chunk_pos);
+  if (to_unload.size() > 0) {
+    unloadRegion(to_unload.front());
+    to_unload.pop_front();
+  }
 }
 
 void ChunkManager::addRegionToQueue(glm::ivec2 region_pos) {
   auto chunk = _chunks.find(region_pos);
   if (chunk == _chunks.end()) {
+    // TODO : Defer this (1 max per frame)
     loadRegion(region_pos);
-  }
-}
-
-void ChunkManager::addChunkToQueue(glm::ivec2 chunk_pos) {
-  auto chunk = _chunks.find(chunk_pos);
-  if (chunk == _chunks.end()) {
-    bool found = false;
-    for (int i = 0; i < to_load.size(); i++) {
-      if (to_load[i] == chunk_pos) {
-	found = true;
-      }
-    }
-    if (found == false) {
-      to_load.push_back(chunk_pos);
-    }
   }
 }
 
@@ -180,34 +173,6 @@ std::string ChunkManager::getRegionFilename(glm::ivec2 pos) {
 			 std::to_string(pos.x / REGION_SIZE) + "." +
 			 std::to_string(pos.y / REGION_SIZE) + ".vox";
   return (filename);
-}
-
-void ChunkManager::loadChunks() {
-  if (to_load.size() > 0) {
-    int chunksPerFrame = 1;
-    for (int i = 0; i < chunksPerFrame; i++) {
-      if (to_load.size() == 0) break;
-      glm::ivec2 chunk_position = to_load.front();
-      // std::cout << chunk_position.x << "|" << chunk_position.y << std::endl;
-      // std::cout << getRegionFilename(chunk_position) << std::endl;
-      _chunks.emplace(chunk_position,
-		      Chunk({chunk_position.x, 0, chunk_position.y}));
-      auto newchunk = _chunks.find(chunk_position);
-      /*
-      newchunk->second.generate();
-      io::writeRegionFile(getRegionFilename(newchunk->first), newchunk->first,
-			  newchunk->second.data);*/
-      if (io::readRegionFile(getRegionFilename(newchunk->first),
-			     newchunk->first, newchunk->second.data) == false) {
-	// std::cout << "generate" << std::endl;
-	newchunk->second.generate();
-      } else {
-	// std::cout << "read" << std::endl;
-      }
-      newchunk->second.mesh();
-      to_load.pop_front();
-    }
-  }
 }
 
 void ChunkManager::loadRegion(glm::ivec2 region_pos) {
@@ -238,6 +203,8 @@ void ChunkManager::loadRegion(glm::ivec2 region_pos) {
 
 	auto chunk = _chunks.find(chunk_position);
 	if (sector_count != 0) {
+	  // Chunk already generated and saved on disk, just decode and mesh it
+	  // back
 	  fseek(region, offset + REGION_LOOKUPTABLE_SIZE, SEEK_SET);
 	  fread(chunk_rle, sector_count * SECTOR_OFFSET, 1, region);
 	  io::decodeRLE(chunk_rle, sector_count * SECTOR_OFFSET,
@@ -245,7 +212,6 @@ void ChunkManager::loadRegion(glm::ivec2 region_pos) {
 	  this->to_mesh.push_back(chunk->first);
 	} else {
 	  this->to_generate.push_back(chunk->first);
-	  // chunk->second.generate();
 	}
       }
     }
@@ -278,11 +244,13 @@ void ChunkManager::unloadRegion(glm::ivec2 region_pos) {
 					       region_pos.y + (y * CHUNK_SIZE));
 
 	auto chunk = _chunks.find(chunk_position);
-	size_t len_rle = io::encodeRLE(chunk->second.data, chunk_rle);
-	lookup[lookup_offset + 3] = (len_rle / SECTOR_OFFSET) + 1;
-	fseek(region, offset + REGION_LOOKUPTABLE_SIZE, SEEK_SET);
-	fwrite(chunk_rle, len_rle, 1, region);
-	_chunks.erase(chunk);
+	if (chunk != _chunks.end()) {
+	  size_t len_rle = io::encodeRLE(chunk->second.data, chunk_rle);
+	  lookup[lookup_offset + 3] = (len_rle / SECTOR_OFFSET) + 1;
+	  fseek(region, offset + REGION_LOOKUPTABLE_SIZE, SEEK_SET);
+	  fwrite(chunk_rle, len_rle, 1, region);
+	  _chunks.erase(chunk);
+	}
       }
     }
     fseek(region, 0, SEEK_SET);
@@ -291,19 +259,25 @@ void ChunkManager::unloadRegion(glm::ivec2 region_pos) {
   }
 }
 
-void ChunkManager::unloadChunks(glm::ivec2 current_chunk_pos) {
+void ChunkManager::unloadRegions(glm::ivec2 current_chunk_pos) {
+  std::unordered_set<glm::ivec2, ivec2Comparator> regions;
   auto chunk_it = _chunks.begin();
   while (chunk_it != _chunks.end()) {
-    auto old = chunk_it;
+    glm::ivec2 chunk_pos(chunk_it->first);
+    glm::ivec2 region_pos((chunk_pos.x >> 8) * (REGION_SIZE * CHUNK_SIZE),
+			  (chunk_pos.y >> 8) * (REGION_SIZE * CHUNK_SIZE));
+    regions.insert(region_pos);
     chunk_it++;
-    glm::ivec3 c_pos = old->second.get_pos();
-    float dist = glm::distance(glm::vec2(c_pos.x, c_pos.z),
-			       glm::vec2(current_chunk_pos));
-    if (round(dist) / CHUNK_SIZE >
-	static_cast<float>(this->_renderDistance) + 5) {
-      io::writeRegionFile(getRegionFilename(old->first), old->first,
-			  old->second.data);
-      _chunks.erase(old);
+  }
+  if (regions.size() > 0) {
+    for (auto region : regions) {
+      glm::ivec2 region_center = region + ((REGION_SIZE * CHUNK_SIZE) / 2);
+      float dist = fabs(glm::distance(glm::vec2(current_chunk_pos),
+				      glm::vec2(region_center)));
+      if (round(dist) / CHUNK_SIZE >
+	  static_cast<float>(this->_renderDistance + (REGION_SIZE + 1))) {
+	to_unload.push_back(region);
+      }
     }
   }
 }
