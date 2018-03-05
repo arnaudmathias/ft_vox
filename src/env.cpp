@@ -39,6 +39,7 @@ Env::Env(unsigned short width, unsigned short height)
   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
   glfwSetCursorPosCallback(window, mouseCallback);
   glfwSetKeyCallback(window, keyCallback);
+  glfwSetMouseButtonCallback(window, mouseKeyCallback);
   glfwSwapInterval(0);
 
   glEnable(GL_DEBUG_OUTPUT);
@@ -107,4 +108,15 @@ void mouseCallback(GLFWwindow *window, double xpos, double ypos) {
       reinterpret_cast<InputHandler *>(glfwGetWindowUserPointer(window));
   inputHandler->mousex = static_cast<float>(xpos);
   inputHandler->mousey = static_cast<float>(ypos);
+}
+
+void mouseKeyCallback(GLFWwindow *window, int button, int action, int mods) {
+  (void)mods;
+  InputHandler *inputHandler =
+      reinterpret_cast<InputHandler *>(glfwGetWindowUserPointer(window));
+  if (action == GLFW_PRESS) {
+    inputHandler->mouse_keys[button] = true;
+  } else if (action == GLFW_RELEASE) {
+    inputHandler->mouse_keys[button] = false;
+  }
 }

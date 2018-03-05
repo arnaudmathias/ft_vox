@@ -16,6 +16,7 @@ class InputHandler {
   bool keybrDisabled = true;
   float mousex;
   float mousey;
+  std::array<bool, 12> mouse_keys = {{0}};
 };
 
 class Env {
@@ -46,6 +47,7 @@ class Env {
 void keyCallback(GLFWwindow *window, int key, int scancode, int action,
                  int mode);
 void mouseCallback(GLFWwindow *window, double xpos, double ypos);
+void mouseKeyCallback(GLFWwindow *window, int button, int action, int mods);
 
 static void GL_DUMP_ERROR(std::string message) {
   int glErrorCode = 0;
