@@ -90,6 +90,18 @@ void Renderer::draw() {
       glDrawArrays(GL_TRIANGLES, 0, vao->vertices_size);
     }
   }
+  if (this->_cubeMapVao != nullptr) {
+    glDepthFunc(GL_LEQUAL);
+    switchShader(this->_cubeMapShader->id, shader_id);
+    setUniform(glGetUniformLocation(shader_id, "P"), this->uniforms.proj);
+    setUniform(glGetUniformLocation(shader_id, "V"),
+               glm::mat4(glm::mat3(this->uniforms.view)));
+    setUniform(glGetUniformLocation(shader_id, "skybox"), 0);
+    glBindVertexArray(this->_cubeMapVao->vao);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, this->_cubeMapTexture->id);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glDepthFunc(GL_LESS);
+  }
   glBindVertexArray(0);
 }
 

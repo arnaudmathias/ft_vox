@@ -117,6 +117,7 @@ Texture::Texture(const std::vector<std::string> &textures) : id(0) {
   glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+  glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
 }
 
 Texture::~Texture() {

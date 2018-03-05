@@ -71,7 +71,6 @@ class Renderer {
   int _height;
   Texture* _textureAtlas;
   Texture* _cubeMapTexture;
-  GLuint _cubeMap;
   VAO* _cubeMapVao;
   Shader* _cubeMapShader;
   Shader* _shader;

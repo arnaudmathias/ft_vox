@@ -29,6 +29,10 @@ int main(int argc, char **argv) {
   Env env(1280, 720);
   ChunkManager chunkManager;
   Renderer renderer(env.width, env.height);
+  renderer.loadCubeMap("shaders/skybox.vert", "shaders/skybox.frag",
+                       {"textures/skybox_side.png", "textures/skybox_side.png",
+                        "textures/skybox_up.png", "textures/skybox_bottom.png",
+                        "textures/skybox_side.png", "textures/skybox_side.png"});
   Camera camera(glm::vec3(0.0, 70.0, 1.0), glm::vec3(0.0, 70.0, 0.0), env.width,
                 env.height);
   bool wireframe = false;
