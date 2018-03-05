@@ -101,34 +101,39 @@ ChunkManager& ChunkManager::operator=(ChunkManager const& rhs) {
   return (*this);
 }
 
+inline unsigned int getNearestIdx(glm::vec2 position,
+				  const std::deque<glm::ivec2>& positions) {
+  unsigned int nearest = 0;
+  float min_dist = 99999.0f;
+  for (unsigned int i = 0; i < positions.size(); i++) {
+    float dist = glm::distance(position, glm::vec2(positions[i]));
+    if (dist < min_dist) {
+      nearest = i;
+      min_dist = dist;
+    }
+  }
+  return (nearest);
+}
+
 void ChunkManager::update(const glm::vec3& player_pos) {
   if (to_generate.size() > 0) {
-    auto nearest = to_generate.begin();
-    float min_dist = 99999.0f;
-    auto chunk_it = to_generate.begin();
-    glm::ivec2 current_pos = glm::ivec2(player_pos.x, player_pos.z);
-    while (chunk_it != to_generate.end()) {
-      float dist = glm::distance(glm::vec2(*chunk_it), glm::vec2(current_pos));
-      if (dist < min_dist) {
-	nearest = chunk_it;
-      }
-      chunk_it++;
+    unsigned int nearest_idx =
+	getNearestIdx(glm::vec2(player_pos.x, player_pos.z), to_generate);
+    auto nearest_chunk_it = _chunks.find(to_generate[nearest_idx]);
+    if (nearest_chunk_it != _chunks.end()) {
+      nearest_chunk_it->second.generate();
+      to_mesh.push_back(nearest_chunk_it->first);
     }
-    // glm::ivec2 chunk_position = to_generate.front();
-    auto newchunk = _chunks.find(*nearest);
-    if (newchunk != _chunks.end()) {
-      newchunk->second.generate();
-      to_mesh.push_back(newchunk->first);
-    }
-    to_generate.erase(chunk_it);
+    to_generate.erase(to_generate.begin() + nearest_idx);
   }
   if (to_mesh.size() > 0) {
-    glm::ivec2 chunk_position = to_mesh.front();
-    auto newchunk = _chunks.find(chunk_position);
-    if (newchunk != _chunks.end()) {
-      newchunk->second.mesh();
+    unsigned int nearest_idx =
+	getNearestIdx(glm::vec2(player_pos.x, player_pos.z), to_mesh);
+    auto nearest_chunk_it = _chunks.find(to_mesh[nearest_idx]);
+    if (nearest_chunk_it != _chunks.end()) {
+      nearest_chunk_it->second.mesh();
     }
-    to_mesh.pop_front();
+    to_mesh.erase(to_mesh.begin() + nearest_idx);
   }
   glm::ivec2 player_chunk_pos =
       glm::ivec2((static_cast<int>(round(player_pos.x)) -
