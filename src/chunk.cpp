@@ -82,16 +82,18 @@ ChunkManager::ChunkManager(uint32_t seed) : _renderDistance(10), _seed(seed) {
 ChunkManager::ChunkManager(ChunkManager const& src) { *this = src; }
 
 ChunkManager::~ChunkManager(void) {
-  /*
+  std::unordered_set<glm::ivec2, ivec2Comparator> regions;
   auto chunk_it = _chunks.begin();
   while (chunk_it != _chunks.end()) {
-    auto old = chunk_it;
+    glm::ivec2 chunk_pos(chunk_it->first);
+    glm::ivec2 region_pos((chunk_pos.x >> 8) * (REGION_SIZE * CHUNK_SIZE),
+			  (chunk_pos.y >> 8) * (REGION_SIZE * CHUNK_SIZE));
+    regions.insert(region_pos);
     chunk_it++;
-    glm::ivec3 c_pos = old->second.get_pos();
-    io::writeRegionFile(getRegionFilename(old->first), old->first,
-			old->second.data);
-    _chunks.erase(old);
-  }*/
+  }
+  for (const auto& region_pos : regions) {
+    unloadRegion(region_pos);
+  }
 }
 
 ChunkManager& ChunkManager::operator=(ChunkManager const& rhs) {
