@@ -50,6 +50,7 @@ class Chunk {
   bool _dirty[CHUNK_HEIGHT / MODEL_HEIGHT] = {true};  // is Remesh needed ?
   RenderAttrib _renderAttrib;
   glm::ivec3 _pos;
+  bool is_dirty();
 };
 
 class ChunkManager {
@@ -61,6 +62,7 @@ class ChunkManager {
   ChunkManager& operator=(ChunkManager const& rhs);
 
   void update(const glm::vec3& player_pos);
+  void rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos);
   void setRenderAttributes(Renderer& renderer, glm::vec3 player_pos);
   void setRenderDistance(unsigned char renderDistance);
   void print_chunkmanager_info(Renderer& renderer, float window_height,
@@ -69,6 +71,8 @@ class ChunkManager {
   void decreaseRenderDistance();
 
  private:
+  inline Block get_block(glm::ivec3 index);
+  inline void set_block(Block block, glm::ivec3 index);
   void addRegionToQueue(glm::ivec2 chunk_pos);
   void loadRegion(glm::ivec2 region_pos);
   void unloadRegion(glm::ivec2 region_pos);
@@ -76,6 +80,8 @@ class ChunkManager {
   std::string getRegionFilename(glm::ivec2 pos);
   unsigned char _renderDistance;
   std::unordered_map<glm::ivec2, Chunk, ivec2Comparator> _chunks;
+  std::deque<glm::ivec2>
+      to_update;  // User modified chunks, priority over everything else
   std::deque<glm::ivec2> to_mesh;
   std::deque<glm::ivec2> to_generate;
   std::deque<glm::ivec2> to_unload;

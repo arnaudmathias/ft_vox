@@ -67,6 +67,10 @@ int main(int argc, char **argv) {
     if (env.inputHandler.keys[GLFW_KEY_ESCAPE]) {
       glfwSetWindowShouldClose(env.window, 1);
     }
+    if (env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_LEFT]) {
+      env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_LEFT] = false;
+      chunkManager.rayCast(camera.dir, camera.pos);
+    }
     if (env.inputHandler.keys[GLFW_KEY_M]) {
       env.inputHandler.keys[GLFW_KEY_M] = false;
       wireframe = !wireframe;
