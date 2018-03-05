@@ -16,9 +16,12 @@ void print_debug_info(Renderer &renderer, Camera &camera) {
   float fheight = static_cast<float>(renderer.getScreenHeight());
   float fwidth = static_cast<float>(renderer.getScreenWidth());
   renderer.renderText(10.0f, fheight - 20.0f, 0.35f,
-                      "X: " + float_to_string(camera.pos.x, 2) +
-                          " Y: " + float_to_string(camera.pos.y, 2) +
-                          " Z: " + float_to_string(camera.pos.z, 2),
+                      "x: " + float_to_string(camera.pos.x, 2) +
+                          " y: " + float_to_string(camera.pos.y, 2) +
+                          " z: " + float_to_string(camera.pos.z, 2),
+                      glm::vec3(1.0f, 1.0f, 1.0f));
+  renderer.renderText(10.0f, fheight - 40.0f, 0.35f,
+                      "vel: " + float_to_string(camera.velocity, 2) + " m/s",
                       glm::vec3(1.0f, 1.0f, 1.0f));
 }
 

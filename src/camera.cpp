@@ -6,7 +6,7 @@ Camera::Camera(glm::vec3 position, glm::vec3 targetPosition, int width,
       height(height),
       mouseInit(false),
       mouseMoved(false),
-      speed(30.0f) {
+      speed(1.0f) {
   pos = position;
 
   glm::vec3 direction = glm::normalize(targetPosition - position);
@@ -15,9 +15,9 @@ Camera::Camera(glm::vec3 position, glm::vec3 targetPosition, int width,
   zNear = 0.1f;
   zFar = 1000.0f;
   proj = glm::perspective(
-      glm::radians(45.0f),
+      glm::radians(80.0f),
       static_cast<float>(width) / static_cast<float>(height), zNear, zFar);
-  fovYscale = tan(glm::radians(45.0f) / 2.0f);
+  fovYscale = tan(glm::radians(80.0f) / 2.0f);
   update();
 }
 
@@ -29,8 +29,6 @@ void Camera::update() {
     horAngle += 0.2f * deltaTime * (oldMouseXpos - mouseXpos);
     verAngle += 0.2f * deltaTime * (oldMouseYpos - mouseYpos);
     verAngle = glm::clamp(verAngle, -1.5f, 1.5f);
-    /* std::cout << "horAngle: " << horAngle << std::endl; */
-    /* std::cout << "verAngle: " << verAngle << std::endl; */
     mouseMoved = false;
   }
   dir = glm::vec3(cos(verAngle) * sin(horAngle), sin(verAngle),
@@ -39,9 +37,14 @@ void Camera::update() {
   right =
       glm::vec3(sin(horAngle - 3.14f / 2.0f), 0, cos(horAngle - 3.14f / 2.0f));
   right = glm::normalize(right);
-  up = glm::cross(right, dir);
-  up = glm::normalize(up);
+  up = glm::normalize(glm::cross(right, dir));
   view = glm::lookAt(pos, dir + pos, up);
+  if (static_cast<float>(currentTime - lastVelocity) > 1.0f) {
+    velocity = glm::distance(lastPos, pos) /
+               static_cast<float>(currentTime - lastVelocity);
+    lastVelocity = currentTime;
+    lastPos = pos;
+  }
 }
 
 void Camera::rotate(float hor, float ver) {
@@ -52,9 +55,9 @@ void Camera::rotate(float hor, float ver) {
 void Camera::queryInput(std::array<bool, 1024> keys, float mouse_x,
                         float mouse_y) {
   if (keys[GLFW_KEY_LEFT_SHIFT]) {
-    speed = 90.0f;
+    speed = 20.0f;
   } else {
-    speed = 30.0f;
+    speed = 5.0f;
   }
   if (keys[GLFW_KEY_UP] || keys[GLFW_KEY_W]) {
     glm::vec3 tmp = dir * speed * deltaTime;
