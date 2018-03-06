@@ -2,13 +2,12 @@
 
 Camera::Camera(glm::vec3 position, glm::vec3 targetPosition, int width,
                int height)
-    : width(width),
+    : pos(position),
+      width(width),
       height(height),
       mouseInit(false),
       mouseMoved(false),
       speed(1.0f) {
-  pos = position;
-
   glm::vec3 direction = glm::normalize(targetPosition - position);
   verAngle = asinf(direction.y);
   horAngle = atan2(direction.x, direction.z);
@@ -41,8 +40,8 @@ void Camera::update() {
   view = glm::lookAt(pos, dir + pos, up);
   if (static_cast<float>(currentTime - lastVelocity) > 1.0f) {
     velocity = glm::distance(lastPos, pos) /
-               static_cast<float>(currentTime - lastVelocity);
-    lastVelocity = currentTime;
+               (static_cast<float>(currentTime) - lastVelocity);
+    lastVelocity = static_cast<float>(currentTime);
     lastPos = pos;
   }
 }

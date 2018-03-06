@@ -20,7 +20,7 @@ inline float noise3D(const glm::vec3 &v) {
   s += static_cast<uint32_t>(v.z) * 3433;
   s ^= 0xa7b2c49a;
   return (static_cast<float>(static_cast<int>(s % 2001) - 1000) / 1000.0f) *
-             0.5 +
+             0.5f +
          1.0f;
 }
 
@@ -47,13 +47,13 @@ float fade(float t) { return t * t * t * (t * (t * 6 - 15) + 10); }
 
 float grad(int hash, float x, float y, float z) {
   int h = hash & 15;
-  double u = h < 8 ? x : y, v = h < 4 ? y : h == 12 || h == 14 ? x : z;
+  float u = h < 8 ? x : y, v = h < 4 ? y : h == 12 || h == 14 ? x : z;
   return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
 }
 
 int inc(int num) {
   num++;
-  num %= static_cast<uint32_t>(permutation.size());
+  num %= static_cast<uint32_t>(permutation.size()) - 1;
   return num;
 }
 
@@ -152,7 +152,7 @@ void generate_chunk(Block *data, glm::vec3 pos) {
   for (int x = 0; x < 16; x++) {
     for (int z = 0; z < 16; z++) {
       float h_map = perlin2D(glm::vec2(pos.x + x, pos.z + z), 6, 0.5f, 0.01f);
-      int height = round(128.0f * h_map);
+      int height = static_cast<int>(round(128.0f * h_map));
       for (int y = 0; y < height; y++) {
         Block block;
         if (y < 67) {

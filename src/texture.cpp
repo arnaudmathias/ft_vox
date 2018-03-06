@@ -77,7 +77,7 @@ Texture::Texture(std::string filename, int offset_x, int offset_y) {
         zoffset++;
       }
     }
-    free(sub_pixels);
+    delete[] sub_pixels;
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER,
                     GL_NEAREST_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

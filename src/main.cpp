@@ -39,8 +39,8 @@ int main(int argc, char **argv) {
       {"textures/skybox_side.png", "textures/skybox_side.png",
        "textures/skybox_up.png", "textures/skybox_bottom.png",
        "textures/skybox_side.png", "textures/skybox_side.png"});
-  Camera camera(glm::vec3(0.0, 70.0, 1.0), glm::vec3(0.0, 70.0, 0.0), env.width,
-                env.height);
+  Camera camera(glm::vec3(0.0f, 70.0f, 1.0f), glm::vec3(0.0f, 70.0f, 0.0f),
+                env.width, env.height);
   bool wireframe = false;
   bool debugMode = false;
   while (!glfwWindowShouldClose(env.window)) {
