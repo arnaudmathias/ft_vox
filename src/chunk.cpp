@@ -223,20 +223,20 @@ void ChunkManager::loadRegion(glm::ivec2 region_pos) {
 					       region_pos.y + (y * CHUNK_SIZE));
 	_chunks.emplace(chunk_position,
 			Chunk({chunk_position.x, 0, chunk_position.y}));
-
 	auto chunk_it = _chunks.find(chunk_position);
-
-	if (sector_count != 0) {
-	  // Chunk already generated and saved on disk, just decode and mesh it
-	  // back
-	  fseek(region, offset + REGION_LOOKUPTABLE_SIZE, SEEK_SET);
-	  fread(chunk_rle, sector_count * SECTOR_OFFSET, 1, region);
-	  io::decodeRLE(chunk_rle, sector_count * SECTOR_OFFSET,
-			chunk_it->second.data);
-	  chunk_it->second.generated = true;
-	  this->to_mesh.push_back(chunk_it->first);
-	} else {
-	  this->to_generate.push_back(chunk_it->first);
+	if (chunk_it != _chunks.end()) {
+	  if (sector_count != 0) {
+	    // Chunk already generated and saved on disk, just decode and mesh
+	    // it back
+	    fseek(region, offset + REGION_LOOKUPTABLE_SIZE, SEEK_SET);
+	    fread(chunk_rle, sector_count * SECTOR_OFFSET, 1, region);
+	    io::decodeRLE(chunk_rle, sector_count * SECTOR_OFFSET,
+			  chunk_it->second.data);
+	    chunk_it->second.generated = true;
+	    this->to_mesh.push_back(chunk_it->first);
+	  } else {
+	    this->to_generate.push_back(chunk_it->first);
+	  }
 	}
       }
     }
