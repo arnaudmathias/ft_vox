@@ -44,8 +44,8 @@ void Chunk::generate() {
 
 void Chunk::mesh() {
   if (is_dirty()) {
-    // mesher::greedy(data, _dirty, _renderAttrib);
-    mesher::culling(data, _dirty, _renderAttrib);
+    mesher::greedy(data, _dirty, _renderAttrib);
+    //mesher::culling(data, _dirty, _renderAttrib);
     mesher::get_aabb(data, aabb_center, aabb_halfsize, _pos);
   }
 };
@@ -414,7 +414,8 @@ void ChunkManager::rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos) {
 	tMax.z += delta.z;
       }
     }
-    block = get_block(pos);
+	block = get_block(pos);
+	std::cout << "x: " << pos.x << "y: " << pos.y<< "z: " << pos.z << "mat : " << static_cast<int>(block.material) <<std::endl;
   }
   if (block.material != Material::Air) {
     Block air = {};
