@@ -42,10 +42,18 @@ void Chunk::generate() {
   }
 }
 
-void Chunk::mesh() {
+void Chunk::mesh(enum MeshingType meshing_type) {
   if (is_dirty()) {
-    mesher::greedy(data, _dirty, _renderAttrib);
-    //mesher::culling(data, _dirty, _renderAttrib);
+    switch (meshing_type) {
+      case MeshingType::Culling:
+	mesher::culling(data, _dirty, _renderAttrib);
+	break;
+      case MeshingType::Greedy:
+	mesher::greedy(data, _dirty, _renderAttrib);
+	break;
+      default:
+	break;
+    }
     mesher::get_aabb(data, aabb_center, aabb_halfsize, _pos);
   }
 };
@@ -77,6 +85,15 @@ bool Chunk::is_dirty() {
     }
   }
   return (false);
+}
+
+void Chunk::forceFullRemesh() {
+  for (int i = 0; i < MODEL_PER_CHUNK; i++) {
+    this->_dirty[i] = true;
+    /*if (this->_renderAttrib.vaos[i] != nullptr) {
+      delete this->_renderAttrib.vaos[i];
+    }*/
+  }
 }
 
 ChunkManager::ChunkManager(void) : ChunkManager(42) {}
@@ -112,6 +129,7 @@ ChunkManager::~ChunkManager(void) {
 ChunkManager& ChunkManager::operator=(ChunkManager const& rhs) {
   if (this != &rhs) {
     this->_renderDistance = rhs._renderDistance;
+    this->_meshing_type = rhs._meshing_type;
   }
   return (*this);
 }
@@ -136,7 +154,7 @@ void ChunkManager::update(const glm::vec3& player_pos) {
 	getNearestIdx(glm::vec2(player_pos.x, player_pos.z), to_update);
     auto nearest_chunk_it = _chunks.find(to_update[nearest_idx]);
     if (nearest_chunk_it != _chunks.end()) {
-      nearest_chunk_it->second.mesh();
+      nearest_chunk_it->second.mesh(this->_meshing_type);
       to_mesh.push_back(nearest_chunk_it->first);
     }
     to_update.erase(to_update.begin() + nearest_idx);
@@ -158,7 +176,7 @@ void ChunkManager::update(const glm::vec3& player_pos) {
 	getNearestIdx(glm::vec2(player_pos.x, player_pos.z), to_mesh);
     auto nearest_chunk_it = _chunks.find(to_mesh[nearest_idx]);
     if (nearest_chunk_it != _chunks.end()) {
-      nearest_chunk_it->second.mesh();
+      nearest_chunk_it->second.mesh(this->_meshing_type);
     }
     to_mesh.erase(to_mesh.begin() + nearest_idx);
   }
@@ -414,8 +432,9 @@ void ChunkManager::rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos) {
 	tMax.z += delta.z;
       }
     }
-	block = get_block(pos);
-	std::cout << "x: " << pos.x << "y: " << pos.y<< "z: " << pos.z << "mat : " << static_cast<int>(block.material) <<std::endl;
+    block = get_block(pos);
+    std::cout << "x: " << pos.x << "y: " << pos.y << "z: " << pos.z
+	      << "mat : " << static_cast<int>(block.material) << std::endl;
   }
   if (block.material != Material::Air) {
     Block air = {};
@@ -433,6 +452,21 @@ void ChunkManager::increaseRenderDistance() {
 
 void ChunkManager::decreaseRenderDistance() {
   if (this->_renderDistance - 1 > 0) this->_renderDistance--;
+}
+
+void ChunkManager::setMeshingType(enum MeshingType type) {
+  _meshing_type = type;
+  reloadMesh();
+}
+
+void ChunkManager::reloadMesh() {
+  // to_mesh.clear();
+  auto chunk_it = _chunks.begin();
+  while (chunk_it != _chunks.end()) {
+    chunk_it->second.forceFullRemesh();
+    to_mesh.push_back(chunk_it->first);
+    chunk_it++;
+  }
 }
 
 void ChunkManager::print_chunkmanager_info(Renderer& renderer, float fheight,

@@ -26,6 +26,8 @@ struct ivec2Comparator {
   }
 };
 
+enum class MeshingType : unsigned int { Culling, Greedy };
+
 class Chunk {
  public:
   Chunk(glm::ivec3 pos);
@@ -37,7 +39,7 @@ class Chunk {
   glm::vec3 aabb_center;
   glm::vec3 aabb_halfsize;
 
-  void mesh();
+  void mesh(enum MeshingType meshing_type);
   void generate();
 
   inline Block get_block(glm::ivec3 index);
@@ -45,6 +47,7 @@ class Chunk {
   const RenderAttrib& getRenderAttrib();
   glm::ivec3 get_pos();
   bool generated;  // Needed on unload to avoid writing empty chunk to disk
+  void forceFullRemesh();
 
  private:
   Chunk(void);
@@ -70,6 +73,8 @@ class ChunkManager {
                                float window_width);
   void increaseRenderDistance();
   void decreaseRenderDistance();
+  void setMeshingType(enum MeshingType type);
+  void reloadMesh();
 
  private:
   inline Block get_block(glm::ivec3 index);
@@ -91,4 +96,5 @@ class ChunkManager {
   FrustrumCulling frustrum_culling;
   uint32_t _seed;
   size_t _debug_chunks_rendered;
+  enum MeshingType _meshing_type;
 };

@@ -195,6 +195,7 @@ TextRenderer::~TextRenderer() {
 void TextRenderer::renderText(float pos_x, float pos_y, float scale,
                               std::string text, glm::vec3 color,
                               glm::mat4 ortho) {
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glDisable(GL_DEPTH_TEST);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

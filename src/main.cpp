@@ -43,8 +43,9 @@ int main(int argc, char **argv) {
                 env.height);
   bool wireframe = false;
   bool debugMode = false;
-  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   while (!glfwWindowShouldClose(env.window)) {
+    wireframe ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+              : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     env.update();
     chunkManager.update(camera.pos);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -70,6 +71,14 @@ int main(int argc, char **argv) {
     if (env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_LEFT]) {
       env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_LEFT] = false;
       chunkManager.rayCast(camera.dir, camera.pos);
+    }
+    if (env.inputHandler.keys[GLFW_KEY_C]) {
+      env.inputHandler.keys[GLFW_KEY_C] = false;
+      chunkManager.setMeshingType(MeshingType::Culling);
+    }
+    if (env.inputHandler.keys[GLFW_KEY_G]) {
+      env.inputHandler.keys[GLFW_KEY_G] = false;
+      chunkManager.setMeshingType(MeshingType::Greedy);
     }
     if (env.inputHandler.keys[GLFW_KEY_M]) {
       env.inputHandler.keys[GLFW_KEY_M] = false;
