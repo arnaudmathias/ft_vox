@@ -44,6 +44,7 @@ class Chunk {
   inline void set_block(Block block, glm::ivec3 index);
   const RenderAttrib& getRenderAttrib();
   glm::ivec3 get_pos();
+  bool generated;  // Needed on unload to avoid writing empty chunk to disk
 
  private:
   Chunk(void);

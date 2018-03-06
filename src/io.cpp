@@ -2,13 +2,10 @@
 
 namespace io {
 bool exists(std::string filename) {
-#if defined(__APPLE__) && defined(__linux__)
   struct stat st = {0};
   if (stat(filename.c_str(), &st) != -1) {
     return (true);
   }
-#elif defined(_WIN32)
-#endif
   return (false);
 }
 void makedir(std::string filename) { mkdir(filename.c_str(), 0700); }
@@ -32,17 +29,12 @@ void decodeRLE(unsigned char* encoded_data, size_t rle_size, Block* data) {
   unsigned int data_offset = 0;
   for (int i = 0; i < rle_size; i += 2) {
     unsigned char len = encoded_data[i];
-    /*
-    if (len == 0) {
-      return;  // EOF
-    }*/
     unsigned char value = encoded_data[i + 1];
     for (int j = 0; j < len; j++) {
       data[data_offset].material = static_cast<enum Material>(value);
       data_offset++;
     }
   }
-  // std::cout << "data offset: " << data_offset << std::endl;
 }
 
 bool readRegionFile(std::string filename, glm::ivec2 pos, Block* data) {

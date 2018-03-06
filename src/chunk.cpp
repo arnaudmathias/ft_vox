@@ -3,7 +3,7 @@
 Chunk::Chunk() : Chunk(glm::ivec3(0)) {}
 
 Chunk::Chunk(glm::ivec3 pos)
-    : aabb_center(0.0f), aabb_halfsize(0.0f), _pos(pos) {
+    : aabb_center(0.0f), aabb_halfsize(0.0f), _pos(pos), generated(false) {
   _renderAttrib.model = glm::translate(_pos);
   for (int i = 0; i < MODEL_PER_CHUNK; i++) {
     this->_dirty[i] = true;
@@ -29,11 +29,13 @@ Chunk& Chunk::operator=(Chunk const& rhs) {
     std::memcpy(this->_dirty, rhs._dirty, sizeof(this->_dirty));
     this->_renderAttrib = rhs._renderAttrib;
     this->_pos = rhs._pos;
+    this->generated = rhs.generated;
   }
   return (*this);
 }
 
 void Chunk::generate() {
+  generated = true;
   generator::generate_chunk(this->data, glm::vec3(_pos));
   for (int i = 0; i < MODEL_PER_CHUNK; i++) {
     this->_dirty[i] = true;
@@ -204,7 +206,7 @@ void ChunkManager::loadRegion(glm::ivec2 region_pos) {
   if (io::exists(filename) == false) {
     io::initRegionFile(filename);
   }
-  FILE* region = fopen(filename.c_str(), "r+b");
+  FILE* region = fopen(filename.c_str(), "rb+");
   if (region != NULL) {
     fread(lookup, REGION_LOOKUPTABLE_SIZE, 1, region);
 
@@ -222,17 +224,19 @@ void ChunkManager::loadRegion(glm::ivec2 region_pos) {
 	_chunks.emplace(chunk_position,
 			Chunk({chunk_position.x, 0, chunk_position.y}));
 
-	auto chunk = _chunks.find(chunk_position);
+	auto chunk_it = _chunks.find(chunk_position);
+
 	if (sector_count != 0) {
 	  // Chunk already generated and saved on disk, just decode and mesh it
 	  // back
 	  fseek(region, offset + REGION_LOOKUPTABLE_SIZE, SEEK_SET);
 	  fread(chunk_rle, sector_count * SECTOR_OFFSET, 1, region);
 	  io::decodeRLE(chunk_rle, sector_count * SECTOR_OFFSET,
-			chunk->second.data);
-	  this->to_mesh.push_back(chunk->first);
+			chunk_it->second.data);
+	  chunk_it->second.generated = true;
+	  this->to_mesh.push_back(chunk_it->first);
 	} else {
-	  this->to_generate.push_back(chunk->first);
+	  this->to_generate.push_back(chunk_it->first);
 	}
       }
     }
@@ -248,7 +252,7 @@ void ChunkManager::unloadRegion(glm::ivec2 region_pos) {
   if (io::exists(filename) == false) {
     io::initRegionFile(filename);
   }
-  FILE* region = fopen(filename.c_str(), "r+b");
+  FILE* region = fopen(filename.c_str(), "rb+");
   if (region != NULL) {
     fread(lookup, REGION_LOOKUPTABLE_SIZE, 1, region);
 
@@ -264,18 +268,23 @@ void ChunkManager::unloadRegion(glm::ivec2 region_pos) {
 	glm::ivec2 chunk_position = glm::ivec2(region_pos.x + (x * CHUNK_SIZE),
 					       region_pos.y + (y * CHUNK_SIZE));
 
-	auto chunk = _chunks.find(chunk_position);
-	if (chunk != _chunks.end()) {
-	  size_t len_rle = io::encodeRLE(chunk->second.data, chunk_rle);
-	  lookup[lookup_offset + 3] = (len_rle / SECTOR_OFFSET) + 1;
-	  fseek(region, offset + REGION_LOOKUPTABLE_SIZE, SEEK_SET);
-	  fwrite(chunk_rle, len_rle, 1, region);
-	  _chunks.erase(chunk);
+	auto chunk_it = _chunks.find(chunk_position);
+	if (chunk_it != _chunks.end()) {
+	  if (chunk_it->second.generated) {
+	    std::memset(chunk_rle, 0,
+			(CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT) * 2);
+	    size_t len_rle = io::encodeRLE(chunk_it->second.data, chunk_rle);
+	    lookup[lookup_offset + 3] =
+		static_cast<unsigned char>((len_rle / SECTOR_OFFSET) + 1);
+	    fseek(region, offset + REGION_LOOKUPTABLE_SIZE, SEEK_SET);
+	    fwrite(chunk_rle, len_rle, 1, region);
+	  }
+	  _chunks.erase(chunk_it);
 	}
       }
     }
     fseek(region, 0, SEEK_SET);
-    fwrite(chunk_rle, REGION_LOOKUPTABLE_SIZE, 1, region);
+    fwrite(lookup, REGION_LOOKUPTABLE_SIZE, 1, region);
     fclose(region);
   }
 }
@@ -363,6 +372,7 @@ inline float intbound(float pos, float ds) {
 }
 
 void ChunkManager::rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos) {
+  // TODO: fix 0 axis
   // http://www.cse.chalmers.se/edu/year/2011/course/TDA361/grid.pdf
   float radius = 5.0;
   glm::ivec3 pos = glm::floor(ray_pos);
