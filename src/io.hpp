@@ -1,7 +1,11 @@
 #pragma once
+#if defined(__APPLE__) || defined(__linux__)
+#include <unistd.h>
+#elif defined(_WIN32)
+#include <direct.h>
+#endif
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <unistd.h>
 #include <iostream>
 #include <string>
 #include "ft_vox.hpp"

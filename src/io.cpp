@@ -8,7 +8,13 @@ bool exists(std::string filename) {
   }
   return (false);
 }
-void makedir(std::string filename) { mkdir(filename.c_str(), 0700); }
+void makedir(std::string filename) {
+#if defined(__APPLE__) || defined(__linux__)
+  _mkdir(filename.c_str(), 0700);
+#elif defined(_WIN32)
+  _mkdir(filename.c_str());
+#endif
+}
 
 size_t encodeRLE(const Block* data, unsigned char* dest) {
   size_t len_rle = 0;
@@ -26,12 +32,12 @@ size_t encodeRLE(const Block* data, unsigned char* dest) {
 }
 
 void decodeRLE(unsigned char* encoded_data, size_t rle_size, Block* data) {
-  unsigned int data_offset = 0;
+  size_t data_offset = 0;
   for (int i = 0; i < rle_size; i += 2) {
     unsigned char len = encoded_data[i];
     unsigned char value = encoded_data[i + 1];
     for (int j = 0; j < len; j++) {
-      data[data_offset].material = static_cast<enum Material>(value);
+      data[data_offset].material = static_cast<Material>(value);
       data_offset++;
     }
   }
