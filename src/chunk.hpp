@@ -48,6 +48,7 @@ class Chunk {
   glm::ivec3 get_pos();
   bool generated;  // Needed on unload to avoid writing empty chunk to disk
   void forceFullRemesh();
+  void setDirty(int model_id);
 
  private:
   Chunk(void);

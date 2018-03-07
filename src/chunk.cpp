@@ -97,6 +97,8 @@ void Chunk::forceFullRemesh() {
   this->_renderAttrib.vaos.clear();
 }
 
+void Chunk::setDirty(int model_id) { _dirty[model_id] = true; }
+
 ChunkManager::ChunkManager(void) : ChunkManager(42) {}
 
 ChunkManager::ChunkManager(uint32_t seed)
@@ -379,6 +381,18 @@ inline void ChunkManager::set_block(Block block, glm::ivec3 index) {
     block_pos.x = index.x - chunk_pos.x;
     block_pos.y = index.y;
     block_pos.z = index.z - chunk_pos.y;
+    if (_meshing_type == MeshingType::Greedy) {
+      // Block extents doesn't necessary match model boundary
+      // Query his real size to update every model impacted
+      /*
+      glm::ivec3 size = mesher::get_interval(chunk_it->second.data, block_pos,
+                                             get_block(block_pos));
+      for (int i = block_pos.y - (size.y + 1); i < block_pos.y + (size.y + 1);
+           i++) {
+        chunk_it->second.setDirty(block_pos.y / MODEL_HEIGHT);
+      }*/
+      chunk_it->second.forceFullRemesh();
+    }
     chunk_it->second.set_block(block, block_pos);
     to_update.push_back(chunk_it->first);
   }
