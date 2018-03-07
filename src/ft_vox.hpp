@@ -18,6 +18,19 @@ enum class BlockSide : unsigned int { Front, Back, Left, Right, Bottom, Up };
 
 enum class Material : unsigned char { Air, Stone, Dirt, Sand };
 
+enum class Biome : unsigned char {
+  Water,
+  Beach,
+  Forest,
+  Jungle,
+  Savannah,
+  Desert
+};
+
+struct BiomeDef {
+  glm::vec3 color;
+};
+
 struct Block {
   enum Material material;
   bool operator==(const Block& rhs) const { return material == rhs.material; };
@@ -30,13 +43,13 @@ struct Texture_lookup {
 
 struct Vertex {
   glm::vec4 position = {0, 0, 0, 0};
-  float texture_id = {0};
+  glm::vec2 attribs = {0, 0};
   Vertex() : position({0.0f, 0.0f, 0.0f, 0.0f}){};
   Vertex(Vertex const& src) { *this = src; }
   Vertex& operator=(Vertex const& rhs) {
     if (this != &rhs) {
       this->position = rhs.position;
-      this->texture_id = rhs.texture_id;
+      this->attribs = rhs.attribs;
     }
     return (*this);
   };

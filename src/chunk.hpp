@@ -36,13 +36,16 @@ class Chunk {
   Chunk& operator=(Chunk const& rhs);
 
   Block data[65536] = {};
+  Biome biome_data[CHUNK_SIZE * CHUNK_SIZE] = {};
   glm::vec3 aabb_center;
   glm::vec3 aabb_halfsize;
+  bool dirty[CHUNK_HEIGHT / MODEL_HEIGHT] = {true};  // is Remesh needed ?
 
   void mesh(enum MeshingType meshing_type);
   void generate();
 
   inline Block get_block(glm::ivec3 index);
+  inline Biome get_biome(glm::ivec3 index);
   inline void set_block(Block block, glm::ivec3 index);
   const RenderAttrib& getRenderAttrib();
   glm::ivec3 get_pos();
@@ -52,7 +55,6 @@ class Chunk {
 
  private:
   Chunk(void);
-  bool _dirty[CHUNK_HEIGHT / MODEL_HEIGHT] = {true};  // is Remesh needed ?
   RenderAttrib _renderAttrib;
   glm::ivec3 _pos;
   bool is_dirty();

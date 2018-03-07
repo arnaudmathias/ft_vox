@@ -1,11 +1,14 @@
 #pragma once
 #include <vector>
+#include "chunk.hpp"
 #include "ft_vox.hpp"
 #include "renderer.hpp"
 
+class Chunk;
+
 namespace mesher {
-void greedy(Block *data, bool *dirty, RenderAttrib &render_attrib);
-void culling(Block *data, bool *dirty, RenderAttrib &render_attrib);
+void greedy(Chunk *chunk, RenderAttrib &render_attrib);
+void culling(Chunk *chunk, RenderAttrib &render_attrib);
 void get_aabb(Block *data, glm::vec3 &aabb_center, glm::vec3 &aabb_halfsize,
               const glm::vec3 chunk_pos);
 void set_block(Block *data, Block block, glm::ivec3 index);

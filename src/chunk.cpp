@@ -6,7 +6,7 @@ Chunk::Chunk(glm::ivec3 pos)
     : aabb_center(0.0f), aabb_halfsize(0.0f), _pos(pos), generated(false) {
   _renderAttrib.model = glm::translate(_pos);
   for (int i = 0; i < MODEL_PER_CHUNK; i++) {
-    this->_dirty[i] = true;
+    this->dirty[i] = true;
   }
 }
 
@@ -26,7 +26,7 @@ Chunk& Chunk::operator=(Chunk const& rhs) {
     this->aabb_halfsize = rhs.aabb_halfsize;
     this->_renderAttrib.vaos = rhs._renderAttrib.vaos;
     this->_renderAttrib.model = rhs._renderAttrib.model;
-    std::memcpy(this->_dirty, rhs._dirty, sizeof(this->_dirty));
+    std::memcpy(this->dirty, rhs.dirty, sizeof(this->dirty));
     this->_renderAttrib = rhs._renderAttrib;
     this->_pos = rhs._pos;
     this->generated = rhs.generated;
@@ -36,9 +36,9 @@ Chunk& Chunk::operator=(Chunk const& rhs) {
 
 void Chunk::generate() {
   generated = true;
-  generator::generate_chunk(this->data, glm::vec3(_pos));
+  generator::generate_chunk(this->data, this->biome_data, glm::vec3(_pos));
   for (int i = 0; i < MODEL_PER_CHUNK; i++) {
-    this->_dirty[i] = true;
+    this->dirty[i] = true;
   }
 }
 
@@ -46,10 +46,10 @@ void Chunk::mesh(enum MeshingType meshing_type) {
   if (is_dirty()) {
     switch (meshing_type) {
       case MeshingType::Culling:
-        mesher::culling(data, _dirty, _renderAttrib);
+        mesher::culling(this, _renderAttrib);
         break;
       case MeshingType::Greedy:
-        mesher::greedy(data, _dirty, _renderAttrib);
+        mesher::greedy(this, _renderAttrib);
         break;
       default:
         break;
@@ -70,17 +70,26 @@ inline Block Chunk::get_block(glm::ivec3 index) {
                      index.z]);
 }
 
+inline Biome Chunk::get_biome(glm::ivec3 index) {
+  if (index.x < 0 || index.x >= CHUNK_SIZE || index.z < 0 ||
+      index.z >= CHUNK_SIZE) {
+    Biome biome = {};
+    return (biome);
+  }
+  return (this->biome_data[index.x * CHUNK_SIZE + index.z]);
+}
+
 inline void Chunk::set_block(Block block, glm::ivec3 index) {
   this->data[index.y * CHUNK_SIZE * CHUNK_SIZE + index.x * CHUNK_SIZE +
              index.z] = block;
-  this->_dirty[index.y / MODEL_HEIGHT] = true;
+  this->dirty[index.y / MODEL_HEIGHT] = true;
 }
 
 glm::ivec3 Chunk::get_pos() { return (_pos); }
 
 bool Chunk::is_dirty() {
   for (int i = 0; i < MODEL_PER_CHUNK; i++) {
-    if (_dirty[i] == true) {
+    if (dirty[i] == true) {
       return (true);
     }
   }
@@ -89,7 +98,7 @@ bool Chunk::is_dirty() {
 
 void Chunk::forceFullRemesh() {
   for (int i = 0; i < MODEL_PER_CHUNK; i++) {
-    this->_dirty[i] = true;
+    this->dirty[i] = true;
   }
   for (int i = 0; i < this->_renderAttrib.vaos.size(); i++) {
     delete this->_renderAttrib.vaos[i];
@@ -97,7 +106,7 @@ void Chunk::forceFullRemesh() {
   this->_renderAttrib.vaos.clear();
 }
 
-void Chunk::setDirty(int model_id) { _dirty[model_id] = true; }
+void Chunk::setDirty(int model_id) { dirty[model_id] = true; }
 
 ChunkManager::ChunkManager(void) : ChunkManager(42) {}
 

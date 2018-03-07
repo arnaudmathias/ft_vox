@@ -16,8 +16,8 @@ VAO::VAO(const std::vector<Vertex> &vertices) {
   glBindBuffer(GL_ARRAY_BUFFER, this->_vbo);
   glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                         (GLvoid *)offsetof(Vertex, position));
-  glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                        (GLvoid *)offsetof(Vertex, texture_id));
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                        (GLvoid *)offsetof(Vertex, attribs));
   glEnableVertexAttribArray(0);
   glEnableVertexAttribArray(1);
 }

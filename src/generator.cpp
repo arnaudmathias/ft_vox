@@ -2,6 +2,10 @@
 
 namespace generator {
 
+const BiomeDef biome_lookup[] = {{{1.0f, 1.0f, 1.0f}}, {{1.0f, 1.0f, 1.0f}},
+                                 {{1.0f, 1.0f, 1.0f}}, {{1.0f, 1.0f, 1.0f}},
+                                 {{1.0f, 1.0f, 1.0f}}, {{1.0f, 1.0f, 1.0f}},
+                                 {{1.0f, 1.0f, 1.0f}}};
 std::vector<int> permutation;
 
 inline float noise2D(const glm::vec2 &v) {
@@ -128,11 +132,11 @@ float perlin3D(glm::vec3 v, const int octaves, float persistence, float scale) {
   return (value / total_amplitude);
 }
 
-float perlin2D(glm::vec2 v, const int octaves, float persistence, float scale) {
+float perlin2D(glm::vec2 v, const int octaves, float persistence,
+               float frequency, glm::vec2 scale) {
   v *= scale;
   float value = 0.0f;
   float amplitude = 1.0f;
-  float frequency = 1.0f;
   float total_amplitude = 0.0f;
   for (int i = 0; i < octaves; i++) {
     value += amplitude * gradientNoise2D(v * frequency);
@@ -143,24 +147,61 @@ float perlin2D(glm::vec2 v, const int octaves, float persistence, float scale) {
   return (value / total_amplitude);
 }
 
-void generate_chunk(Block *data, glm::vec3 pos) {
+enum Biome get_biome(float elevation) {
+  if (elevation < 0.1)
+    return Biome::Water;
+  else if (elevation < 0.2)
+    return Biome::Beach;
+  else if (elevation < 0.3)
+    return Biome::Forest;
+  else if (elevation < 0.5)
+    return Biome::Jungle;
+  else if (elevation < 0.7)
+    return Biome::Savannah;
+  else
+    return Biome::Desert;
+}
+
+void generate_chunk(Block *data, Biome *biome_data, glm::vec3 pos) {
   pos += permutation.size() / 2;
   for (int x = 0; x < 16; x++) {
     for (int z = 0; z < 16; z++) {
-      float h_map = perlin2D(glm::vec2(pos.x + x, pos.z + z), 6, 0.5f, 0.01f);
-      int height = static_cast<int>(round(128.0f * h_map));
+      float mountain_value = perlin2D(glm::vec2(pos.x + x, pos.z + z), 10, 0.2f,
+                                      0.3f, {0.03f, 0.03f});
+      mountain_value = glm::pow(mountain_value, 4.0f) + 0.1f;
+      float flat_base_value = perlin2D(glm::vec2(pos.x + x, pos.z + z), 5, 0.5f,
+                                       2.0f, {0.01f, 0.01f});
+      flat_base_value *= 0.125f;
+      flat_base_value += 0.5f;
+      float terrain_value = perlin2D(glm::vec2(pos.x + x, pos.z + z), 4, 0.1f,
+                                     0.5f, {0.005f, 0.005f});
+
+      float h_map = (1.0f - terrain_value) * flat_base_value +
+                    (terrain_value)*mountain_value;
+      Biome biome = get_biome(h_map);
+      biome_data[x * CHUNK_SIZE + z] = biome;
+      int height = static_cast<int>(round(256.0f * h_map));
       for (int y = 0; y < height; y++) {
         Block block;
-        if (y < 67) {
+        if (biome == Biome::Water) {
+          block.material = Material::Dirt;
+        } else if (biome == Biome::Beach) {
+          block.material = Material::Sand;
+        } else if (biome == Biome::Forest) {
+          block.material = Material::Dirt;
+        } else if (biome == Biome::Jungle) {
+          block.material = Material::Dirt;
+        } else if (biome == Biome::Savannah) {
           block.material = Material::Dirt;
         } else {
           block.material = Material::Stone;
         }
+        /*
         float h_cave = perlin3D(glm::vec3(pos.x + x, pos.y + y, pos.z + z), 6,
                                 0.9f, 0.001f);
-        if (h_cave < 0.63) {
-          set_block(data, block, glm::ivec3(x, y, z));
-        }
+        if (h_cave < 0.63) {*/
+        set_block(data, block, glm::ivec3(x, y, z));
+        //}
       }
     }
   }

@@ -70,8 +70,9 @@ const Texture_lookup textures[4] = {{-1, -1, -1, -1, -1, -1},
 
 namespace mesher {
 
-const std::vector<Vertex> getFace(const Block &block, glm::ivec3 pos,
-                                  enum BlockSide side, glm::vec3 scale) {
+const std::vector<Vertex> getFace(Chunk *chunk, const Block &block,
+                                  glm::ivec3 pos, enum BlockSide side,
+                                  glm::vec3 scale) {
   std::vector<Vertex> vertices;
   std::vector<glm::vec3> positions;
 
@@ -109,34 +110,35 @@ const std::vector<Vertex> getFace(const Block &block, glm::ivec3 pos,
     Vertex v;
     v.position = glm::vec4(vertex_position + glm::vec3(pos), 0.0f);
     v.position.w = static_cast<float>(side);
-    v.texture_id = static_cast<float>(texture_id);
+    v.attribs.x = static_cast<float>(texture_id);
+    v.attribs.y =
+        static_cast<float>(chunk->biome_data[pos.x * CHUNK_SIZE + pos.z]);
     vertices.push_back(v);
   }
   return (vertices);
 }
 
-std::vector<Vertex> get_scaled_cube(Block b, glm::vec3 scale, glm::ivec3 pos) {
+std::vector<Vertex> get_scaled_cube(Chunk *chunk, Block b, glm::vec3 scale,
+                                    glm::ivec3 pos) {
   std::vector<Vertex> vertices;
 
-  auto quad = getFace(b, pos, BlockSide::Front, scale);
+  auto quad = getFace(chunk, b, pos, BlockSide::Front, scale);
   vertices.insert(vertices.end(), quad.begin(), quad.end());
-  quad = getFace(b, pos, BlockSide::Right, scale);
+  quad = getFace(chunk, b, pos, BlockSide::Right, scale);
   vertices.insert(vertices.end(), quad.begin(), quad.end());
-  quad = getFace(b, pos, BlockSide::Back, scale);
+  quad = getFace(chunk, b, pos, BlockSide::Back, scale);
   vertices.insert(vertices.end(), quad.begin(), quad.end());
-  quad = getFace(b, pos, BlockSide::Left, scale);
+  quad = getFace(chunk, b, pos, BlockSide::Left, scale);
   vertices.insert(vertices.end(), quad.begin(), quad.end());
-  quad = getFace(b, pos, BlockSide::Bottom, scale);
+  quad = getFace(chunk, b, pos, BlockSide::Bottom, scale);
   vertices.insert(vertices.end(), quad.begin(), quad.end());
-  quad = getFace(b, pos, BlockSide::Up, scale);
+  quad = getFace(chunk, b, pos, BlockSide::Up, scale);
   vertices.insert(vertices.end(), quad.begin(), quad.end());
 
   return vertices;
 }
 
-glm::ivec3 get_interval(Block *data, glm::ivec3 pos,
-                        std::vector<glm::ivec2> interval_dimension[3],
-                        Block current_block) {
+glm::ivec3 get_interval(Block *data, glm::ivec3 pos, Block current_block) {
   glm::ivec3 save_pos = pos;
   glm::ivec3 size = glm::ivec3(0);
 
@@ -179,12 +181,6 @@ glm::ivec3 get_interval(Block *data, glm::ivec3 pos,
     pos.x = save_pos.x;
     pos.y = save_pos.y;
   }
-  // std::cout << "size : " << size.x << " " << size.y << " " << size.z
-  //	    << std::endl;
-  // size += glm::ivec3(1);
-  /*if (size.x == 0) size.x = 1;
-  if (size.y == 0) size.y = 1;
-  if (size.z == 0) size.z = 1;*/
   return size;
 }
 
@@ -201,38 +197,37 @@ bool is_fill(std::vector<glm::ivec2> interval_dimension[3], glm::ivec3 pos) {
   return false;
 }
 
-void greedy(Block *data, bool *dirty, RenderAttrib &render_attrib) {
+void greedy(Chunk *chunk, RenderAttrib &render_attrib) {
   size_t total_vertices = 0;
   enum BlockSide sides[4] = {BlockSide::Left, BlockSide::Right,
                              BlockSide::Bottom, BlockSide::Up};
   glm::ivec3 inter = glm::ivec3(0);
   std::vector<glm::ivec2> interval_dimension[3] = {{}};
   for (unsigned int model_id = 0; model_id < MODEL_PER_CHUNK; model_id++) {
-    if (dirty[model_id] == false) continue;
+    if (chunk->dirty[model_id] == false) continue;
     std::vector<Vertex> vertices;
     for (int y = model_id * MODEL_HEIGHT; y < ((model_id + 1) * MODEL_HEIGHT);
          y++) {
       for (int x = 0; x < CHUNK_SIZE; x++) {
         Block current_block = {};
         for (int z = 0; z < CHUNK_SIZE; z++) {
-          Block front_block = get_block(data, {x, y, z});
+          Block front_block = get_block(chunk->data, {x, y, z});
           if (front_block.material != Material::Air &&
               !is_fill(interval_dimension, {x, y, z})) {
             Block b = front_block.material != Material::Air ? front_block
                                                             : current_block;
-            inter =
-                get_interval(data, glm::ivec3(x, y, z), interval_dimension, b);
+            inter = get_interval(chunk->data, glm::ivec3(x, y, z), b);
             interval_dimension[0].push_back({x, x + inter.x});
             interval_dimension[1].push_back({y, y + inter.y});
             interval_dimension[2].push_back({z, z + inter.z});
-            auto cube = get_scaled_cube(b, inter, {x, y, z});
+            auto cube = get_scaled_cube(chunk, b, inter, {x, y, z});
             vertices.insert(vertices.begin(), cube.begin(), cube.end());
             current_block = front_block;
           }
         }
       }
     }
-    dirty[model_id] = false;
+    chunk->dirty[model_id] = false;
     total_vertices += vertices.size();
     if (vertices.size() > 0) {
       if (render_attrib.vaos.size() <= model_id) {
@@ -244,57 +239,57 @@ void greedy(Block *data, bool *dirty, RenderAttrib &render_attrib) {
   }
   // std::cout << "Mesher: " << total_vertices << " vertices" << std::endl;
 }
-void culling(Block *data, bool *dirty, RenderAttrib &render_attrib) {
+void culling(Chunk *chunk, RenderAttrib &render_attrib) {
   size_t total_vertices = 0;
   enum BlockSide sides[4] = {BlockSide::Left, BlockSide::Right,
                              BlockSide::Bottom, BlockSide::Up};
   for (unsigned int model_id = 0; model_id < CHUNK_HEIGHT / MODEL_HEIGHT;
        model_id++) {
-    if (dirty[model_id] == false) continue;
+    if (chunk->dirty[model_id] == false) continue;
     std::vector<Vertex> vertices;
     for (int y = model_id * MODEL_HEIGHT; y < ((model_id + 1) * MODEL_HEIGHT);
          y++) {
       for (int x = 0; x < CHUNK_SIZE; x++) {
         Block current_block = {};
         for (int z = 0; z < CHUNK_SIZE; z++) {
-          Block front_block = get_block(data, {x, y, z});
+          Block front_block = get_block(chunk->data, {x, y, z});
           if (front_block != current_block) {
             Block b = front_block.material != Material::Air ? front_block
                                                             : current_block;
             auto quad =
-                getFace(b, {x, y, z}, BlockSide::Front, glm::vec3(1.0f));
+                getFace(chunk, b, {x, y, z}, BlockSide::Front, glm::vec3(1.0f));
             vertices.insert(vertices.end(), quad.begin(), quad.end());
             current_block = front_block;
           }
           if (z == CHUNK_SIZE - 1 && current_block.material != Material::Air) {
-            auto quad = getFace(current_block, {x, y, z}, BlockSide::Back,
-                                glm::vec3(1.0f));
+            auto quad = getFace(chunk, current_block, {x, y, z},
+                                BlockSide::Back, glm::vec3(1.0f));
             vertices.insert(vertices.end(), quad.begin(), quad.end());
           }
           if (x == 0 && current_block.material != Material::Air) {
-            auto quad = getFace(current_block, {x, y, z}, BlockSide::Right,
-                                glm::vec3(1.0f));
+            auto quad = getFace(chunk, current_block, {x, y, z},
+                                BlockSide::Right, glm::vec3(1.0f));
             vertices.insert(vertices.end(), quad.begin(), quad.end());
           }
           if (x == CHUNK_SIZE - 1 && current_block.material != Material::Air) {
-            auto quad = getFace(current_block, {x, y, z}, BlockSide::Left,
-                                glm::vec3(1.0f));
+            auto quad = getFace(chunk, current_block, {x, y, z},
+                                BlockSide::Left, glm::vec3(1.0f));
             vertices.insert(vertices.end(), quad.begin(), quad.end());
           }
           if (y == 0 && current_block.material != Material::Air) {
-            auto quad = getFace(current_block, {x, y, z}, BlockSide::Bottom,
-                                glm::vec3(1.0f));
+            auto quad = getFace(chunk, current_block, {x, y, z},
+                                BlockSide::Bottom, glm::vec3(1.0f));
             vertices.insert(vertices.end(), quad.begin(), quad.end());
           }
           if (y == CHUNK_HEIGHT - 1 &&
               current_block.material != Material::Air) {
-            auto quad = getFace(current_block, {x, y, z}, BlockSide::Up,
+            auto quad = getFace(chunk, current_block, {x, y, z}, BlockSide::Up,
                                 glm::vec3(1.0f));
             vertices.insert(vertices.end(), quad.begin(), quad.end());
           }
           if (y == ((model_id + 1) * MODEL_HEIGHT) - 1 &&
               current_block.material != Material::Air) {
-            auto quad = getFace(current_block, {x, y, z}, BlockSide::Up,
+            auto quad = getFace(chunk, current_block, {x, y, z}, BlockSide::Up,
                                 glm::vec3(1.0f));
             vertices.insert(vertices.end(), quad.begin(), quad.end());
           }
@@ -303,9 +298,10 @@ void culling(Block *data, bool *dirty, RenderAttrib &render_attrib) {
                 glm::ivec3(x - 1, y, z), glm::ivec3(x + 1, y, z),
                 glm::ivec3(x, y + 1, z), glm::ivec3(x, y - 1, z)};
             for (int f = 0; f < 4; f++) {
-              Block b = get_block(data, positions[f]);
+              Block b = get_block(chunk->data, positions[f]);
               if (b.material != Material::Air) {
-                auto quad = getFace(b, positions[f], sides[f], glm::vec3(1.0f));
+                auto quad =
+                    getFace(chunk, b, positions[f], sides[f], glm::vec3(1.0f));
                 vertices.insert(vertices.end(), quad.begin(), quad.end());
               }
             }
@@ -313,7 +309,7 @@ void culling(Block *data, bool *dirty, RenderAttrib &render_attrib) {
         }
       }
     }
-    dirty[model_id] = false;
+    chunk->dirty[model_id] = false;
     total_vertices += vertices.size();
     if (vertices.size() > 0) {
       if (render_attrib.vaos.size() <= model_id) {
