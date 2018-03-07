@@ -6,21 +6,21 @@ Camera::Camera(glm::vec3 position, glm::vec3 targetPosition, int width,
       width(width),
       height(height),
       mouseInit(false),
+      zNear(0.1f),
+      zFar(1000.0f),
+      velocity(0.0f),
       mouseMoved(false),
       speed(1.0f) {
-  glm::vec3 direction = glm::normalize(targetPosition - position);
-  verAngle = asinf(direction.y);
-  horAngle = atan2(direction.x, direction.z);
-  zNear = 0.1f;
-  zFar = 1000.0f;
   proj = glm::perspective(
       glm::radians(80.0f),
       static_cast<float>(width) / static_cast<float>(height), zNear, zFar);
-  fovYscale = tan(glm::radians(80.0f) / 2.0f);
-  update();
+  glm::vec3 direction = glm::normalize(targetPosition - position);
+  verAngle = asinf(direction.y);
+  horAngle = atan2(direction.x, direction.z);
+  updateMatrix();
 }
 
-void Camera::update() {
+void Camera::updateMatrix() {
   double currentTime = glfwGetTime();
   deltaTime = static_cast<float>(currentTime - lastTime);
   lastTime = static_cast<float>(currentTime);
@@ -51,44 +51,54 @@ void Camera::rotate(float hor, float ver) {
   verAngle += ver;
 }
 
-void Camera::queryInput(std::array<bool, 1024> keys, float mouse_x,
-                        float mouse_y) {
-  if (keys[GLFW_KEY_LEFT_SHIFT]) {
+void Camera::update(const Env &env) {
+  if (width != env.width || height != env.height) {
+    proj = glm::perspective(
+        glm::radians(80.0f),
+        static_cast<float>(env.width) / static_cast<float>(env.height), zNear,
+        zFar);
+  }
+  if (env.inputHandler.keys[GLFW_KEY_LEFT_SHIFT]) {
     speed = 20.0f;
   } else {
     speed = 5.0f;
   }
-  if (keys[GLFW_KEY_UP] || keys[GLFW_KEY_W]) {
+  if (env.inputHandler.keys[GLFW_KEY_UP] || env.inputHandler.keys[GLFW_KEY_W]) {
     glm::vec3 tmp = dir * speed * deltaTime;
     pos = pos + tmp;
   }
-  if (keys[GLFW_KEY_DOWN] || keys[GLFW_KEY_S]) {
+  if (env.inputHandler.keys[GLFW_KEY_DOWN] ||
+      env.inputHandler.keys[GLFW_KEY_S]) {
     glm::vec3 tmp = dir * speed * deltaTime;
     pos = pos - tmp;
   }
-  if (keys[GLFW_KEY_RIGHT] || keys[GLFW_KEY_D]) {
+  if (env.inputHandler.keys[GLFW_KEY_RIGHT] ||
+      env.inputHandler.keys[GLFW_KEY_D]) {
     glm::vec3 right = glm::cross(up, dir);
     glm::vec3 tmp = right * speed * deltaTime;
     pos = pos - tmp;
   }
-  if (keys[GLFW_KEY_LEFT] || keys[GLFW_KEY_A]) {
+  if (env.inputHandler.keys[GLFW_KEY_LEFT] ||
+      env.inputHandler.keys[GLFW_KEY_A]) {
     glm::vec3 right = glm::cross(up, dir);
     glm::vec3 tmp = right * speed * deltaTime;
     pos = pos + tmp;
   }
-  if (mouse_x != mouseXpos || mouse_y != mouseYpos) {
+  if (env.inputHandler.mousex != mouseXpos ||
+      env.inputHandler.mousey != mouseYpos) {
     if (mouseInit) {
       oldMouseXpos = mouseXpos;
       oldMouseYpos = mouseYpos;
     } else {
-      oldMouseXpos = mouse_x;
-      oldMouseYpos = mouse_y;
+      oldMouseXpos = env.inputHandler.mousex;
+      oldMouseYpos = env.inputHandler.mousey;
       mouseInit = true;
     }
-    mouseXpos = mouse_x;
-    mouseYpos = mouse_y;
+    mouseXpos = env.inputHandler.mousex;
+    mouseYpos = env.inputHandler.mousey;
     this->mouseMoved = true;
   }
+  updateMatrix();
 }
 
 float Camera::getAspectRatio() {

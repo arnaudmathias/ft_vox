@@ -24,16 +24,15 @@ class Camera {
   float oldMouseYpos;
   float zNear;
   float zFar;
-  float fovYscale;
   float velocity;  // m/s
 
   Camera(glm::vec3 pos, glm::vec3 target, int width = 0, int height = 0);
-  void queryInput(std::array<bool, 1024> keys, float mouse_x, float mouse_y);
-  void update();
+  void update(const Env &env);
   void rotate(float hor, float ver);  // in radians
   float getAspectRatio();
 
  private:
+  void updateMatrix();
   bool mouseMoved = false;
   float horAngle;
   float verAngle;

@@ -388,9 +388,9 @@ inline float intbound(float pos, float ds) {
   return (ds > 0.0f ? ceil(pos) - pos : pos - floor(pos)) / fabs(ds);
 }
 
-void ChunkManager::rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos) {
+void ChunkManager::rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos,
+                           float max_dist) {
   // http://www.cse.chalmers.se/edu/year/2011/course/TDA361/grid.pdf
-  float radius = 5.0;
   glm::ivec3 pos = glm::floor(ray_pos);
   glm::ivec3 step;
   step.x = ray_dir.x < 0.0f ? -1 : 1;
@@ -411,28 +411,26 @@ void ChunkManager::rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos) {
     }
     if (tMax.x < tMax.y) {
       if (tMax.x < tMax.z) {
-        if (tMax.x > radius) break;
+        if (tMax.x > max_dist) break;
         pos.x += step.x;
         tMax.x += delta.x;
       } else {
-        if (tMax.z > radius) break;
+        if (tMax.z > max_dist) break;
         pos.z += step.z;
         tMax.z += delta.z;
       }
     } else {
       if (tMax.y < tMax.z) {
-        if (tMax.y > radius) break;
+        if (tMax.y > max_dist) break;
         pos.y += step.y;
         tMax.y += delta.y;
       } else {
-        if (tMax.z > radius) break;
+        if (tMax.z > max_dist) break;
         pos.z += step.z;
         tMax.z += delta.z;
       }
     }
     block = get_block(pos);
-    std::cout << "x: " << pos.x << "y: " << pos.y << "z: " << pos.z
-              << "mat : " << static_cast<int>(block.material) << std::endl;
   }
   if (block.material != Material::Air) {
     Block air = {};

@@ -12,6 +12,8 @@
 
 class Shader;
 
+enum class PolygonMode { Point, Line, Fill };
+
 struct Uniforms {
   glm::mat4 view;
   glm::mat4 proj;
@@ -63,8 +65,9 @@ class Renderer {
   int getScreenHeight();
   void loadCubeMap(std::string vertex_sha, std::string fragment_sha,
                    const std::vector<std::string>& textures);
+  void clearScreen();
+  void switchPolygonMode(enum PolygonMode mode);
   Uniforms uniforms;
-  TextRenderer textRenderer;
 
  private:
   int _width;
@@ -74,6 +77,8 @@ class Renderer {
   VAO* _cubeMapVao;
   Shader* _cubeMapShader;
   Shader* _shader;
+  enum PolygonMode _polygonMode;
+  TextRenderer _textRenderer;
   Renderer(void);
   std::vector<RenderAttrib> _renderAttribs;
   void switchShader(GLuint shader_id, int& current_shader_id);

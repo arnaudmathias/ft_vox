@@ -66,7 +66,7 @@ class ChunkManager {
   ChunkManager& operator=(ChunkManager const& rhs);
 
   void update(const glm::vec3& player_pos);
-  void rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos);
+  void rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos, float max_dist);
   void setRenderAttributes(Renderer& renderer, glm::vec3 player_pos);
   void setRenderDistance(unsigned char renderDistance);
   void print_chunkmanager_info(Renderer& renderer, float window_height,

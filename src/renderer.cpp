@@ -22,7 +22,8 @@ Renderer::Renderer(int width, int height)
       _textureAtlas(nullptr),
       _cubeMapTexture(nullptr),
       _cubeMapVao(nullptr),
-      _cubeMapShader(nullptr) {
+      _cubeMapShader(nullptr),
+      _polygonMode(PolygonMode::Fill) {
   _shader =
       new Shader(ShaderType::NORMAL, "shaders/vox.vert", "shaders/vox.frag");
   _textureAtlas = new Texture("textures/terrain.png", 16, 16);
@@ -48,9 +49,12 @@ Renderer &Renderer::operator=(Renderer const &rhs) {
 
 void Renderer::renderText(float pos_x, float pos_y, float scale,
                           std::string text, glm::vec3 color) {
+  enum PolygonMode backup_mode = _polygonMode;
+  switchPolygonMode(PolygonMode::Fill);
   glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(this->_width),
                                     0.0f, static_cast<float>(this->_height));
-  textRenderer.renderText(pos_x, pos_y, scale, text, color, projection);
+  _textRenderer.renderText(pos_x, pos_y, scale, text, color, projection);
+  switchPolygonMode(backup_mode);
 }
 
 void Renderer::addRenderAttrib(const RenderAttrib &renderAttrib) {
@@ -119,6 +123,30 @@ void Renderer::loadCubeMap(std::string vertex_sha, std::string fragment_sha,
   this->_cubeMapShader =
       new Shader(ShaderType::NORMAL, vertex_sha, fragment_sha);
   this->_cubeMapVao = new VAO(skyboxVertices);
+}
+
+void Renderer::clearScreen() {
+  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void Renderer::switchPolygonMode(enum PolygonMode mode) {
+  if (mode != _polygonMode) {
+    switch (mode) {
+      case PolygonMode::Point:
+        glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+        break;
+      case PolygonMode::Line:
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        break;
+      case PolygonMode::Fill:
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        break;
+      default:
+        break;
+    }
+    _polygonMode = mode;
+  }
 }
 
 bool RenderAttrib::operator<(const struct RenderAttrib &rhs) const {
@@ -195,7 +223,6 @@ TextRenderer::~TextRenderer() {
 void TextRenderer::renderText(float pos_x, float pos_y, float scale,
                               std::string text, glm::vec3 color,
                               glm::mat4 ortho) {
-  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glDisable(GL_DEPTH_TEST);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

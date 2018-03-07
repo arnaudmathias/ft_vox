@@ -28,10 +28,10 @@ class Env {
   ~Env();
 
   void update();  // Called once per frame
-  float getDeltaTime();
-  float getAbsoluteTime();
-  float getFrame();
-  float getFPS();
+  float getDeltaTime() const;
+  float getAbsoluteTime() const;
+  float getFrame() const;
+  float getFPS() const;
   int width;
   int height;
 

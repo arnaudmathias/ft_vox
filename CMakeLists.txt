@@ -28,6 +28,7 @@ SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 set(SOURCE_FILES
         src/main.cpp
         src/env.cpp
+        src/game.cpp
         src/chunk.cpp
         src/shader.cpp
         src/renderer.cpp

@@ -41,7 +41,6 @@ Env::Env(unsigned short width, unsigned short height)
   glfwSetKeyCallback(window, keyCallback);
   glfwSetMouseButtonCallback(window, mouseKeyCallback);
   glfwSwapInterval(0);
-
   glEnable(GL_DEBUG_OUTPUT);
   while (glGetError() != GL_NO_ERROR)
     ;  // Flush gl_error
@@ -70,7 +69,7 @@ void Env::updateFpsCounter() {
   static int frame_count;
   double current_seconds = glfwGetTime();
   double elapsed_seconds = current_seconds - previous_seconds;
-  if (elapsed_seconds > 0.25) {
+  if (elapsed_seconds > 1.0) {
     previous_seconds = current_seconds;
     this->_fps =
         static_cast<float>(frame_count) / static_cast<float>(elapsed_seconds);
@@ -82,13 +81,13 @@ void Env::updateFpsCounter() {
   frame_count++;
 }
 
-float Env::getDeltaTime() { return (this->_deltaTime); }
+float Env::getDeltaTime() const { return (this->_deltaTime); }
 
-float Env::getAbsoluteTime() { return (this->_absoluteTime); }
+float Env::getAbsoluteTime() const { return (this->_absoluteTime); }
 
-float Env::getFrame() { return (this->_frame); }
+float Env::getFrame() const { return (this->_frame); }
 
-float Env::getFPS() { return (this->_fps); }
+float Env::getFPS() const { return (this->_fps); }
 
 void keyCallback(GLFWwindow *window, int key, int scancode, int action,
                  int mode) {
