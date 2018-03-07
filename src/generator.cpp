@@ -117,11 +117,11 @@ float gradientNoise2D(const glm::vec2 &pos) {
   return ((lerp(x1, x2, v) + 1.0f)) / 2.0f;
 }
 
-float perlin3D(glm::vec3 v, const int octaves, float persistence, float scale) {
+float perlin3D(glm::vec3 v, const int octaves, float persistence,
+               float frequency, glm::vec3 scale) {
   v *= scale;
   float value = 0.0f;
   float amplitude = 1.0f;
-  float frequency = 1.0f;
   float total_amplitude = 0.0f;
   for (int i = 0; i < octaves; i++) {
     value += amplitude * gradientNoise3D(v * frequency);
@@ -166,7 +166,7 @@ void generate_chunk(Block *data, Biome *biome_data, glm::vec3 pos) {
   pos += permutation.size() / 2;
   for (int x = 0; x < 16; x++) {
     for (int z = 0; z < 16; z++) {
-      float mountain_value = perlin2D(glm::vec2(pos.x + x, pos.z + z), 10, 0.2f,
+      float mountain_value = perlin2D(glm::vec2(pos.x + x, pos.z + z), 4, 0.2f,
                                       0.3f, {0.03f, 0.03f});
       mountain_value = glm::pow(mountain_value, 4.0f) + 0.1f;
       float flat_base_value = perlin2D(glm::vec2(pos.x + x, pos.z + z), 5, 0.5f,
@@ -183,25 +183,30 @@ void generate_chunk(Block *data, Biome *biome_data, glm::vec3 pos) {
       int height = static_cast<int>(round(256.0f * h_map));
       for (int y = 0; y < height; y++) {
         Block block;
-        if (biome == Biome::Water) {
-          block.material = Material::Dirt;
-        } else if (biome == Biome::Beach) {
-          block.material = Material::Sand;
-        } else if (biome == Biome::Forest) {
-          block.material = Material::Dirt;
-        } else if (biome == Biome::Jungle) {
-          block.material = Material::Dirt;
-        } else if (biome == Biome::Savannah) {
-          block.material = Material::Dirt;
-        } else {
+        if (y == 0) {
+          block.material = Material::Bedrock;
+        } else if (y < height - 3) {
           block.material = Material::Stone;
+        } else {
+          if (biome == Biome::Water) {
+            block.material = Material::Dirt;
+          } else if (biome == Biome::Beach) {
+            block.material = Material::Sand;
+          } else if (biome == Biome::Forest) {
+            block.material = Material::Dirt;
+          } else if (biome == Biome::Jungle) {
+            block.material = Material::Dirt;
+          } else if (biome == Biome::Savannah) {
+            block.material = Material::Dirt;
+          } else {
+            block.material = Material::Stone;
+          }
         }
-        /*
-        float h_cave = perlin3D(glm::vec3(pos.x + x, pos.y + y, pos.z + z), 6,
-                                0.9f, 0.001f);
-        if (h_cave < 0.63) {*/
-        set_block(data, block, glm::ivec3(x, y, z));
-        //}
+        float h_cave = perlin3D(glm::vec3(pos.x + x, pos.y + y, pos.z + z), 4,
+                                0.9f, 1.0f, {0.01f, 0.004f, 0.01f});
+        if (y == 0 || h_cave < 0.63) {
+          set_block(data, block, glm::ivec3(x, y, z));
+        }
       }
     }
   }

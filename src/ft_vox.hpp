@@ -16,7 +16,7 @@
 
 enum class BlockSide : unsigned int { Front, Back, Left, Right, Bottom, Up };
 
-enum class Material : unsigned char { Air, Stone, Dirt, Sand };
+enum class Material : unsigned char { Air, Stone, Dirt, Sand, Bedrock };
 
 enum class Biome : unsigned char {
   Water,
