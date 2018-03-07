@@ -53,18 +53,15 @@ float grad(int hash, float x, float y, float z) {
 
 int inc(int num) {
   num++;
-  num %= static_cast<uint32_t>(permutation.size()) - 1;
+  num %= static_cast<uint32_t>(permutation.size() - 1);
   return num;
 }
 
 float gradientNoise3D(glm::vec3 pos) {
   glm::vec3 p = pos;
-  p.x = fmod(fabs(pos.x + (permutation.size() / 2)),
-             static_cast<float>(permutation.size()));
-  p.y = fmod(fabs(pos.y + (permutation.size() / 2)),
-             static_cast<float>(permutation.size()));
-  p.z = fmod(fabs(pos.z + (permutation.size() / 2)),
-             static_cast<float>(permutation.size()));
+  p.x = fmod(fabs(pos.x), static_cast<float>(permutation.size() - 1));
+  p.y = fmod(fabs(pos.y), static_cast<float>(permutation.size() - 1));
+  p.z = fmod(fabs(pos.z), static_cast<float>(permutation.size() - 1));
   int xi = static_cast<int>(floor(p.x));
   int yi = static_cast<int>(floor(p.y));
   int zi = static_cast<int>(floor(p.z));
@@ -97,10 +94,8 @@ float gradientNoise3D(glm::vec3 pos) {
 
 float gradientNoise2D(const glm::vec2 &pos) {
   glm::vec2 p = pos;
-  p.x = fmod(fabs(pos.x + (permutation.size() / 2)),
-             static_cast<float>(permutation.size()));
-  p.y = fmod(fabs(pos.y + (permutation.size() / 2)),
-             static_cast<float>(permutation.size()));
+  p.x = fmod(fabs(pos.x), static_cast<float>(permutation.size() - 1));
+  p.y = fmod(fabs(pos.y), static_cast<float>(permutation.size() - 1));
   int xi = static_cast<int>(floor(p.x));
   int yi = static_cast<int>(floor(p.y));
   float xf = glm::fract(p.x);
@@ -149,6 +144,7 @@ float perlin2D(glm::vec2 v, const int octaves, float persistence, float scale) {
 }
 
 void generate_chunk(Block *data, glm::vec3 pos) {
+  pos += permutation.size() / 2;
   for (int x = 0; x < 16; x++) {
     for (int z = 0; z < 16; z++) {
       float h_map = perlin2D(glm::vec2(pos.x + x, pos.z + z), 6, 0.5f, 0.01f);
