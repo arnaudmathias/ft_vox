@@ -240,22 +240,20 @@ void ChunkManager::loadRegion(glm::ivec2 region_pos) {
 
         glm::ivec2 chunk_position = glm::ivec2(region_pos.x + (x * CHUNK_SIZE),
                                                region_pos.y + (y * CHUNK_SIZE));
-        _chunks.emplace(chunk_position,
-                        Chunk({chunk_position.x, 0, chunk_position.y}));
-        auto chunk_it = _chunks.find(chunk_position);
-        if (chunk_it != _chunks.end()) {
-          if (sector_count != 0) {
-            // Chunk already generated and saved on disk, just decode and mesh
-            // it back
-            fseek(region, offset + REGION_LOOKUPTABLE_SIZE, SEEK_SET);
-            fread(chunk_rle, sector_count * SECTOR_OFFSET, 1, region);
-            io::decodeRLE(chunk_rle, sector_count * SECTOR_OFFSET,
-                          chunk_it->second.data);
-            chunk_it->second.generated = true;
-            this->to_mesh.push_back(chunk_it->first);
-          } else {
-            this->to_generate.push_back(chunk_it->first);
-          }
+        auto emplace_res = _chunks.emplace(
+            chunk_position, Chunk({chunk_position.x, 0, chunk_position.y}));
+        auto chunk_it = emplace_res.first;
+        if (sector_count != 0) {
+          // Chunk already generated and saved on disk, just decode and mesh
+          // it back
+          fseek(region, offset + REGION_LOOKUPTABLE_SIZE, SEEK_SET);
+          fread(chunk_rle, sector_count * SECTOR_OFFSET, 1, region);
+          io::decodeRLE(chunk_rle, sector_count * SECTOR_OFFSET,
+                        chunk_it->second.data);
+          chunk_it->second.generated = true;
+          this->to_mesh.push_back(chunk_it->first);
+        } else {
+          this->to_generate.push_back(chunk_it->first);
         }
       }
     }
@@ -391,7 +389,6 @@ inline float intbound(float pos, float ds) {
 }
 
 void ChunkManager::rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos) {
-  // TODO: fix 0 axis
   // http://www.cse.chalmers.se/edu/year/2011/course/TDA361/grid.pdf
   float radius = 5.0;
   glm::ivec3 pos = glm::floor(ray_pos);
