@@ -91,9 +91,10 @@ void Chunk::forceFullRemesh() {
   for (int i = 0; i < MODEL_PER_CHUNK; i++) {
     this->_dirty[i] = true;
   }
-  /*for (int i = 0; i < this->_renderAttrib.vaos.size(); i++) {
-     delete this->_renderAttrib.vaos[i];
-   }*/
+  for (int i = 0; i < this->_renderAttrib.vaos.size(); i++) {
+    delete this->_renderAttrib.vaos[i];
+  }
+  this->_renderAttrib.vaos.clear();
 }
 
 ChunkManager::ChunkManager(void) : ChunkManager(42) {}

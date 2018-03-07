@@ -10,7 +10,7 @@ bool exists(std::string filename) {
 }
 void makedir(std::string filename) {
 #if defined(__APPLE__) || defined(__linux__)
-  _mkdir(filename.c_str(), 0700);
+  mkdir(filename.c_str(), 0700);
 #elif defined(_WIN32)
   _mkdir(filename.c_str());
 #endif
