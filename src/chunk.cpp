@@ -44,6 +44,9 @@ void Chunk::generate() {
 
 void Chunk::mesh(enum MeshingType meshing_type) {
   if (is_dirty()) {
+    if (_renderAttrib.vaos.size() != CHUNK_HEIGHT / MODEL_HEIGHT) {
+      _renderAttrib.vaos.resize(CHUNK_HEIGHT / MODEL_HEIGHT);
+    }
     switch (meshing_type) {
       case MeshingType::Culling:
         mesher::culling(this, _renderAttrib);
@@ -100,10 +103,6 @@ void Chunk::forceFullRemesh() {
   for (int i = 0; i < MODEL_PER_CHUNK; i++) {
     this->dirty[i] = true;
   }
-  for (int i = 0; i < this->_renderAttrib.vaos.size(); i++) {
-    delete this->_renderAttrib.vaos[i];
-  }
-  this->_renderAttrib.vaos.clear();
 }
 
 void Chunk::setDirty(int model_id) { dirty[model_id] = true; }
@@ -420,8 +419,7 @@ inline void ChunkManager::set_block(Block block, glm::ivec3 index) {
     if (_meshing_type == MeshingType::Greedy) {
       // Block extents doesn't necessary match model boundary
       // Query his real size to update every model impacted
-      /*
-      glm::ivec3 size = mesher::get_interval(chunk_it->second.data, block_pos,
+      /*glm::ivec3 size = mesher::get_interval(chunk_it->second.data, block_pos,
                                              get_block(block_pos));
       for (int i = block_pos.y - (size.y + 1); i < block_pos.y + (size.y + 1);
            i++) {

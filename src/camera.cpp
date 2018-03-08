@@ -59,7 +59,7 @@ void Camera::update(const Env &env) {
         zFar);
   }
   if (env.inputHandler.keys[GLFW_KEY_LEFT_SHIFT]) {
-    speed = 90.0f;
+    speed = 20.0f;
   } else {
     speed = 5.0f;
   }

@@ -232,15 +232,13 @@ void greedy(Chunk *chunk, RenderAttrib &render_attrib) {
     }
     chunk->dirty[model_id] = false;
     total_vertices += vertices.size();
-    if (vertices.size() > 0) {
-      if (render_attrib.vaos.size() <= model_id) {
-        render_attrib.vaos.push_back(new VAO(vertices));
-      } else {
-        render_attrib.vaos[model_id]->update(vertices);
-      }
+    if (render_attrib.vaos[model_id] == nullptr) {
+      render_attrib.vaos[model_id] = new VAO(vertices);
+    } else {
+      render_attrib.vaos[model_id]->update(vertices);
     }
+    // std::cout << "Mesher: " << total_vertices << " vertices" << std::endl;
   }
-  // std::cout << "Mesher: " << total_vertices << " vertices" << std::endl;
 }
 void culling(Chunk *chunk, RenderAttrib &render_attrib) {
   size_t total_vertices = 0;
@@ -315,8 +313,8 @@ void culling(Chunk *chunk, RenderAttrib &render_attrib) {
     chunk->dirty[model_id] = false;
     total_vertices += vertices.size();
     if (vertices.size() > 0) {
-      if (render_attrib.vaos.size() <= model_id) {
-        render_attrib.vaos.push_back(new VAO(vertices));
+      if (render_attrib.vaos[model_id] == nullptr) {
+        render_attrib.vaos[model_id] = new VAO(vertices);
       } else {
         render_attrib.vaos[model_id]->update(vertices);
       }

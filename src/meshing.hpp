@@ -11,6 +11,7 @@ void greedy(Chunk *chunk, RenderAttrib &render_attrib);
 void culling(Chunk *chunk, RenderAttrib &render_attrib);
 void get_aabb(Block *data, glm::vec3 &aabb_center, glm::vec3 &aabb_halfsize,
               const glm::vec3 chunk_pos);
+glm::ivec3 get_interval(Block *data, glm::ivec3 pos, Block current_block);
 void set_block(Block *data, Block block, glm::ivec3 index);
 Block get_block(Block *data, glm::ivec3 index);
 }  // namespace mesher

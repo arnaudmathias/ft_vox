@@ -90,8 +90,10 @@ void Renderer::draw() {
   for (const auto &attrib : this->_renderAttribs) {
     updateUniforms(attrib, _shader->id);
     for (const auto &vao : attrib.vaos) {
-      glBindVertexArray(vao->vao);
-      glDrawArrays(GL_TRIANGLES, 0, vao->vertices_size);
+      if (vao != nullptr && vao->vertices_size > 0) {
+        glBindVertexArray(vao->vao);
+        glDrawArrays(GL_TRIANGLES, 0, vao->vertices_size);
+      }
     }
   }
   if (this->_cubeMapVao != nullptr) {
