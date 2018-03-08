@@ -236,8 +236,13 @@ void ChunkManager::loadRegion(glm::ivec2 region_pos) {
   if (io::exists(filename) == false) {
     io::initRegionFile(filename);
   }
+  unsigned int filesize = io::get_filesize(filename);
   FILE* region = fopen(filename.c_str(), "rb+");
   if (region != NULL) {
+    if (filesize < REGION_LOOKUPTABLE_SIZE) {
+      fclose(region);
+      return;
+    }
     fread(lookup, REGION_LOOKUPTABLE_SIZE, 1, region);
 
     int file_offset = REGION_LOOKUPTABLE_SIZE;
@@ -257,9 +262,14 @@ void ChunkManager::loadRegion(glm::ivec2 region_pos) {
         if (content_size != 0) {
           // Chunk already generated and saved on disk, just decode and mesh
           // it back
+          if (filesize < file_offset + content_size) {
+            fclose(region);
+            return;
+          }
           fseek(region, file_offset, SEEK_SET);
           fread(chunk_rle, content_size, 1, region);
-          io::decodeRLE(chunk_rle, content_size, chunk_it->second.data);
+          io::decodeRLE(chunk_rle, content_size, chunk_it->second.data,
+                        (CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT));
           chunk_it->second.generated = true;
           this->to_mesh.push_back(chunk_it->first);
         } else {

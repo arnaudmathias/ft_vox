@@ -38,13 +38,14 @@ size_t encodeRLE(const Block* data, unsigned char* dest) {
   return (len_rle - 2);
 }
 
-void decodeRLE(unsigned char* encoded_data, size_t rle_size, Block* data) {
+void decodeRLE(unsigned char* encoded_data, size_t rle_size, Block* data,
+               unsigned int limit) {
   size_t data_offset = 0;
   for (unsigned int i = 0; i < rle_size; i += 2) {
     unsigned char len = encoded_data[i];
     unsigned char value = encoded_data[i + 1];
     for (int j = 0; j < len; j++) {
-      if (data_offset >= 65536) return;
+      if (data_offset >= limit) return;
       data[data_offset].material = static_cast<Material>(value);
       data_offset++;
     }

@@ -16,7 +16,8 @@ void makedir(std::string filename);
 unsigned int get_filesize(std::string filename);
 
 size_t encodeRLE(const Block* data, unsigned char* dest);
-void decodeRLE(unsigned char* encoded_data, size_t rle_size, Block* data);
+void decodeRLE(unsigned char* encoded_data, size_t rle_size, Block* data,
+               unsigned int limit);
 
 void initRegionFile(std::string filename);
 }  // namespace io
