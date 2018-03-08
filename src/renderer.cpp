@@ -1,4 +1,7 @@
 #include "renderer.hpp"
+#define STB_TRUETYPE_IMPLEMENTATION  // force following include to generate
+#include "stb_truetype.h"
+// implementation
 
 std::vector<glm::vec3> skyboxVertices = {
     {-1.0f, 1.0f, -1.0f},  {-1.0f, -1.0f, -1.0f}, {1.0f, -1.0f, -1.0f},
@@ -163,44 +166,52 @@ TextRenderer::TextRenderer(void) {
   Shader shader(ShaderType::NORMAL, "shaders/text.vert", "shaders/text.frag");
   this->_shader_id = shader.id;
 
-  FT_Library ft;
-  if (FT_Init_FreeType(&ft))
-    std::cout << "Could not init FreeType Library" << std::endl;
+  unsigned int filesize = io::get_filesize("fonts/minecraft.ttf");
+  unsigned char *ttf_buffer = new unsigned char[filesize + 1];
+  FILE *font_fp = fopen("fonts/minecraft.ttf", "rb");
+  if (font_fp == nullptr) {
+    return;
+  }
 
-  FT_Face face;
-  if (FT_New_Face(ft, "fonts/minecraft.ttf", 0, &face))
+  fread(ttf_buffer, filesize + 1, 1, font_fp);
+  int font_offset = stbtt_GetFontOffsetForIndex(ttf_buffer, 0);
+  if (font_offset == -1) {
+    std::cout << "wrong font offset" << std::endl;
+    return;
+  }
+  stbtt_fontinfo font;
+  if (stbtt_InitFont(&font, ttf_buffer, font_offset) == 0) {
     std::cout << "Failed to load font" << std::endl;
-
-  FT_Set_Pixel_Sizes(face, 0, 48);
+    return;
+  }
+  float font_scale = stbtt_ScaleForPixelHeight(&font, 48.0f);
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   for (GLubyte c = 0; c < 128; c++) {
-    if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
-      std::cout << "Failed to load Glyph" << std::endl;
-      continue;
-    }
-
+    int w, h, xoff, yoff;
+    unsigned char *bitmap =
+        stbtt_GetCodepointBitmap(&font, 0, font_scale, c, &w, &h, &xoff, &yoff);
     GLuint texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, face->glyph->bitmap.width,
-                 face->glyph->bitmap.rows, 0, GL_RED, GL_UNSIGNED_BYTE,
-                 face->glyph->bitmap.buffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w, h, 0, GL_RED, GL_UNSIGNED_BYTE,
+                 bitmap);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    Character character = {
-        texture,
-        glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
-        glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
-        static_cast<GLuint>(face->glyph->advance.x)};
+    int advance_width;
+    stbtt_GetCodepointHMetrics(&font, c, &advance_width, 0);
+    Character character = {texture, glm::ivec2(w, h), glm::ivec2(xoff, -yoff),
+                           static_cast<GLuint>(advance_width * font_scale)};
     this->_characters.insert(std::pair<GLchar, Character>(c, character));
+    stbtt_FreeBitmap(bitmap, NULL);
   }
-  FT_Done_Face(face);
-  FT_Done_FreeType(ft);
+
+  fclose(font_fp);
+  delete[] ttf_buffer;
 
   glGenVertexArrays(1, &this->_vao);
   glGenBuffers(1, &this->_vbo);
@@ -254,7 +265,7 @@ void TextRenderer::renderText(float pos_x, float pos_y, float scale,
       glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
       glBindBuffer(GL_ARRAY_BUFFER, 0);
       glDrawArrays(GL_TRIANGLES, 0, 6);
-      pos_x += (ch.advanceOffset >> 6) * scale;
+      pos_x += ch.advanceOffset * scale;
     }
   }
   glBindVertexArray(0);

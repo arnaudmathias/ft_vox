@@ -1,14 +1,13 @@
 #pragma once
-#include <ft2build.h>
 #include <algorithm>
 #include <map>
 #include <vector>
 #include "env.hpp"
 #include "ft_vox.hpp"
+#include "io.hpp"
 #include "shader.hpp"
 #include "texture.hpp"
 #include "vao.hpp"
-#include FT_FREETYPE_H
 
 class Shader;
 
