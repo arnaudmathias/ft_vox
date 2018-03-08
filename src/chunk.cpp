@@ -272,6 +272,22 @@ void ChunkManager::loadRegion(glm::ivec2 region_pos) {
   }
 }
 
+void ChunkManager::eraseUnloadedChunk(glm::ivec2 pos) {
+  // Remove chunk from queues
+  for (auto it = to_mesh.begin(); it != to_mesh.end(); it++) {
+    if (*it == pos) {
+      to_mesh.erase(it);
+      break;
+    }
+  }
+  for (auto it = to_generate.begin(); it != to_generate.end(); it++) {
+    if (*it == pos) {
+      to_generate.erase(it);
+      break;
+    }
+  }
+}
+
 void ChunkManager::unloadRegion(glm::ivec2 region_pos) {
   unsigned char chunk_rle[(CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT) * 2] = {0};
   unsigned char lookup[REGION_LOOKUPTABLE_SIZE] = {0};
@@ -306,6 +322,7 @@ void ChunkManager::unloadRegion(glm::ivec2 region_pos) {
             fseek(region, file_offset, SEEK_SET);
             fwrite(chunk_rle, len_rle, 1, region);
           }
+          eraseUnloadedChunk(chunk_it->first);
           _chunks.erase(chunk_it);
         }
         file_offset += content_size;
