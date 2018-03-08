@@ -240,32 +240,32 @@ void ChunkManager::loadRegion(glm::ivec2 region_pos) {
   if (region != NULL) {
     fread(lookup, REGION_LOOKUPTABLE_SIZE, 1, region);
 
+    int file_offset = REGION_LOOKUPTABLE_SIZE;
     for (int y = 0; y < REGION_SIZE; y++) {
       for (int x = 0; x < REGION_SIZE; x++) {
-        int lookup_offset = 4 * (x + y * REGION_SIZE);
-        unsigned int offset =
+        int lookup_offset = 3 * (x + y * REGION_SIZE);
+        unsigned int content_size =
             ((unsigned int)(lookup[lookup_offset + 0]) << 16) |
             ((unsigned int)(lookup[lookup_offset + 1]) << 8) |
             ((unsigned int)(lookup[lookup_offset + 2]));
-        unsigned int sector_count = (lookup[lookup_offset + 3] & 0xff);
 
         glm::ivec2 chunk_position = glm::ivec2(region_pos.x + (x * CHUNK_SIZE),
                                                region_pos.y + (y * CHUNK_SIZE));
         auto emplace_res = _chunks.emplace(
             chunk_position, Chunk({chunk_position.x, 0, chunk_position.y}));
         auto chunk_it = emplace_res.first;
-        if (sector_count != 0) {
+        if (content_size != 0) {
           // Chunk already generated and saved on disk, just decode and mesh
           // it back
-          fseek(region, offset + REGION_LOOKUPTABLE_SIZE, SEEK_SET);
-          fread(chunk_rle, sector_count * SECTOR_OFFSET, 1, region);
-          io::decodeRLE(chunk_rle, sector_count * SECTOR_OFFSET,
-                        chunk_it->second.data);
+          fseek(region, file_offset, SEEK_SET);
+          fread(chunk_rle, content_size, 1, region);
+          io::decodeRLE(chunk_rle, content_size, chunk_it->second.data);
           chunk_it->second.generated = true;
           this->to_mesh.push_back(chunk_it->first);
         } else {
           this->to_generate.push_back(chunk_it->first);
         }
+        file_offset += content_size;
       }
     }
     fclose(region);
@@ -284,31 +284,31 @@ void ChunkManager::unloadRegion(glm::ivec2 region_pos) {
   if (region != NULL) {
     fread(lookup, REGION_LOOKUPTABLE_SIZE, 1, region);
 
+    int file_offset = REGION_LOOKUPTABLE_SIZE;
     for (int y = 0; y < REGION_SIZE; y++) {
       for (int x = 0; x < REGION_SIZE; x++) {
-        int lookup_offset = 4 * (x + y * REGION_SIZE);
-        unsigned int offset =
-            ((unsigned int)(lookup[lookup_offset + 0]) << 16) |
-            ((unsigned int)(lookup[lookup_offset + 1]) << 8) |
-            ((unsigned int)(lookup[lookup_offset + 2]));
-        unsigned int sector_count = (lookup[lookup_offset + 3] & 0xff);
+        int lookup_offset = 3 * (x + y * REGION_SIZE);
+        unsigned int content_size = 0;
 
         glm::ivec2 chunk_position = glm::ivec2(region_pos.x + (x * CHUNK_SIZE),
                                                region_pos.y + (y * CHUNK_SIZE));
-
         auto chunk_it = _chunks.find(chunk_position);
         if (chunk_it != _chunks.end()) {
           if (chunk_it->second.generated) {
             std::memset(chunk_rle, 0,
                         (CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT) * 2);
-            size_t len_rle = io::encodeRLE(chunk_it->second.data, chunk_rle);
-            lookup[lookup_offset + 3] =
-                static_cast<unsigned char>((len_rle / SECTOR_OFFSET) + 1);
-            fseek(region, offset + REGION_LOOKUPTABLE_SIZE, SEEK_SET);
+            unsigned int len_rle = static_cast<unsigned int>(
+                io::encodeRLE(chunk_it->second.data, chunk_rle));
+            lookup[lookup_offset + 0] = (len_rle & 0xff0000) >> 16;
+            lookup[lookup_offset + 1] = (len_rle & 0xff00) >> 8;
+            lookup[lookup_offset + 2] = (len_rle & 0xff);
+            content_size = len_rle;
+            fseek(region, file_offset, SEEK_SET);
             fwrite(chunk_rle, len_rle, 1, region);
           }
           _chunks.erase(chunk_it);
         }
+        file_offset += content_size;
       }
     }
     fseek(region, 0, SEEK_SET);
