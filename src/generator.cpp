@@ -117,6 +117,16 @@ float gradientNoise2D(const glm::vec2 &pos) {
   return ((lerp(x1, x2, v) + 1.0f)) / 2.0f;
 }
 
+float ridgedNoise3D(const glm::vec3 &pos) {
+  return (2.0f * (0.5f - fabs(0.5f - gradientNoise3D(pos))));
+  // return ((fabs(0.5f - gradientNoise2D(pos))));
+}
+
+float ridgedNoise2D(const glm::vec2 &pos) {
+  return (2.0f * (0.5f - fabs(0.5f - gradientNoise2D(pos))));
+  // return ((fabs(0.5f - gradientNoise2D(pos))));
+}
+
 float perlin3D(glm::vec3 v, const int octaves, float persistence,
                float frequency, glm::vec3 scale) {
   v *= scale;
@@ -146,6 +156,35 @@ float perlin2D(glm::vec2 v, const int octaves, float persistence,
   }
   return (value / total_amplitude);
 }
+float ridged3D(glm::vec3 v, const int octaves, float persistence,
+               float frequency, glm::vec3 scale) {
+  v *= scale;
+  float value = 0.0f;
+  float amplitude = 1.0f;
+  float total_amplitude = 0.0f;
+  for (int i = 0; i < octaves; i++) {
+    value += amplitude * ridgedNoise2D(v * frequency);
+    total_amplitude += amplitude;
+    amplitude *= persistence;
+    frequency *= 2.0f;
+  }
+  return (value / total_amplitude);
+}
+
+float ridged2D(glm::vec2 v, const int octaves, float persistence,
+               float frequency, glm::vec2 scale) {
+  v *= scale;
+  float value = 0.0f;
+  float amplitude = 1.0f;
+  float total_amplitude = 0.0f;
+  for (int i = 0; i < octaves; i++) {
+    value += amplitude * ridgedNoise2D(v * frequency);
+    total_amplitude += amplitude;
+    amplitude *= persistence;
+    frequency *= 2.0f;
+  }
+  return (value / total_amplitude);
+}
 
 enum Biome get_biome(float elevation) {
   if (elevation < 0.1)
@@ -166,9 +205,13 @@ void generate_chunk(Block *data, Biome *biome_data, glm::vec3 pos) {
   pos += permutation.size() / 2;
   for (int x = 0; x < 16; x++) {
     for (int z = 0; z < 16; z++) {
-      float mountain_value = perlin2D(glm::vec2(pos.x + x, pos.z + z), 4, 0.2f,
-                                      0.3f, {0.03f, 0.03f});
+      /*
+      float mountain_value = ridged2D(glm::vec2(pos.x + x, pos.z + z), 20, 0.2f,
+                                      0.3f, {0.005f, 0.005f});*/
+      float mountain_value = perlin2D(glm::vec2(pos.x + x, pos.z + z), 20, 0.2f,
+                                      0.2f, {0.07f, 0.07f});
       mountain_value = glm::pow(mountain_value, 4.0f) + 0.1f;
+      // mountain_value -= 0.5f;
       float flat_base_value = perlin2D(glm::vec2(pos.x + x, pos.z + z), 5, 0.5f,
                                        2.0f, {0.01f, 0.01f});
       flat_base_value *= 0.125f;
