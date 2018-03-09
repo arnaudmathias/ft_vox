@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include "env.hpp"
 #include "ft_vox.hpp"
@@ -48,6 +49,22 @@ class TextRenderer {
   GLuint _shader_id;
 };
 
+class UiRenderer {
+ public:
+  UiRenderer(void);
+  UiRenderer(UiRenderer const& src);
+  ~UiRenderer(void);
+  UiRenderer& operator=(UiRenderer const& rhs);
+  void renderUI(std::string texture_name, float pos_x, float pos_y, float scale,
+                glm::mat4 ortho, bool centered);
+
+ private:
+  GLuint _vao;
+  GLuint _vbo;
+  GLuint _shader_id;
+  std::unordered_map<std::string, Texture*> _texture_cache;
+};
+
 class Renderer {
  public:
   Renderer(int width, int height);
@@ -57,6 +74,8 @@ class Renderer {
   void addRenderAttrib(const RenderAttrib& renderAttrib);
   void renderText(float pos_x, float pos_y, float scale, std::string text,
                   glm::vec3 color);
+  void renderUI(std::string filename, float pos_x, float pos_y, float scale,
+                bool centered);
   void draw();
   void flush();
   void reset();
@@ -78,6 +97,7 @@ class Renderer {
   Shader* _shader;
   enum PolygonMode _polygonMode;
   TextRenderer _textRenderer;
+  UiRenderer _uiRenderer;
   Renderer(void);
   std::vector<RenderAttrib> _renderAttribs;
   void switchShader(GLuint shader_id, int& current_shader_id);

@@ -1,7 +1,6 @@
 #include "renderer.hpp"
-#define STB_TRUETYPE_IMPLEMENTATION  // force following include to generate
+#define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h"
-// implementation
 
 std::vector<glm::vec3> skyboxVertices = {
     {-1.0f, 1.0f, -1.0f},  {-1.0f, -1.0f, -1.0f}, {1.0f, -1.0f, -1.0f},
@@ -57,6 +56,16 @@ void Renderer::renderText(float pos_x, float pos_y, float scale,
   glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(this->_width),
                                     0.0f, static_cast<float>(this->_height));
   _textRenderer.renderText(pos_x, pos_y, scale, text, color, projection);
+  switchPolygonMode(backup_mode);
+}
+
+void Renderer::renderUI(std::string filename, float pos_x, float pos_y,
+                        float scale, bool centered) {
+  enum PolygonMode backup_mode = _polygonMode;
+  switchPolygonMode(PolygonMode::Fill);
+  glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(this->_width),
+                                    0.0f, static_cast<float>(this->_height));
+  _uiRenderer.renderUI(filename, pos_x, pos_y, scale, projection, centered);
   switchPolygonMode(backup_mode);
 }
 
@@ -268,6 +277,89 @@ void TextRenderer::renderText(float pos_x, float pos_y, float scale,
       pos_x += ch.advanceOffset * scale;
     }
   }
+  glBindVertexArray(0);
+  glEnable(GL_DEPTH_TEST);
+  glBindTexture(GL_TEXTURE_2D, 0);
+  glDisable(GL_BLEND);
+}
+
+UiRenderer::UiRenderer(void) {
+  Shader shader(ShaderType::NORMAL, "shaders/ui.vert", "shaders/ui.frag");
+  this->_shader_id = shader.id;
+
+  glGenVertexArrays(1, &this->_vao);
+  glGenBuffers(1, &this->_vbo);
+
+  glBindVertexArray(this->_vao);
+  glBindBuffer(GL_ARRAY_BUFFER, this->_vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+
+  glEnableVertexAttribArray(0);
+
+  glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindVertexArray(0);
+}
+
+UiRenderer::UiRenderer(UiRenderer const &src) { *this = src; }
+
+UiRenderer::~UiRenderer(void) {
+  auto it = _texture_cache.begin();
+  while (it != _texture_cache.end()) {
+    delete it->second;
+    it++;
+  }
+}
+
+UiRenderer &UiRenderer::operator=(UiRenderer const &rhs) {
+  if (this != &rhs) {
+  }
+  return (*this);
+}
+
+void UiRenderer::renderUI(std::string texture_name, float pos_x, float pos_y,
+                          float scale, glm::mat4 ortho, bool centered) {
+  Texture *texture = nullptr;
+  auto it = _texture_cache.find(texture_name);
+  if (it == _texture_cache.end()) {
+    texture = new Texture(texture_name);
+    _texture_cache.emplace(texture_name, texture);
+  } else {
+    texture = it->second;
+  }
+  if (texture == nullptr) return;
+  glDisable(GL_DEPTH_TEST);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glUseProgram(_shader_id);
+  glUniformMatrix4fv(glGetUniformLocation(_shader_id, "proj"), 1, GL_FALSE,
+                     glm::value_ptr(ortho));
+  glActiveTexture(GL_TEXTURE0);
+  glBindVertexArray(this->_vao);
+  GLfloat w = texture->width * scale;
+  GLfloat h = texture->height * scale;
+
+  GLfloat xpos = pos_x;
+  GLfloat ypos = pos_y;
+
+  if (centered) {
+    xpos -= w / 2;
+    ypos -= h / 2;
+  }
+  pos_x *= scale;
+  pos_y *= scale;
+  GLfloat vertices[6][4] = {
+      {xpos, ypos + h, 0.0, 0.0},    {xpos, ypos, 0.0, 1.0},
+      {xpos + w, ypos, 1.0, 1.0},
+
+      {xpos, ypos + h, 0.0, 0.0},    {xpos + w, ypos, 1.0, 1.0},
+      {xpos + w, ypos + h, 1.0, 0.0}};
+  glBindTexture(GL_TEXTURE_2D, texture->id);
+  glBindBuffer(GL_ARRAY_BUFFER, this->_vbo);
+  glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+
   glBindVertexArray(0);
   glEnable(GL_DEPTH_TEST);
   glBindTexture(GL_TEXTURE_2D, 0);

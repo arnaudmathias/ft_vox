@@ -47,6 +47,8 @@ void Game::update(Env& env) {
 }
 
 void Game::render(const Env& env, Renderer& renderer) {
+  float fwidth = static_cast<float>(renderer.getScreenWidth());
+  float fheight = static_cast<float>(renderer.getScreenHeight());
   renderer.uniforms.view = _camera->view;
   renderer.uniforms.proj = _camera->proj;
   renderer.uniforms.view_proj = _camera->proj * _camera->view;
@@ -55,10 +57,10 @@ void Game::render(const Env& env, Renderer& renderer) {
   renderer.flush();
   if (_debugMode) {
     print_debug_info(env, renderer, *_camera);
-    _chunkManager.print_chunkmanager_info(
-        renderer, static_cast<float>(renderer.getScreenHeight()),
-        static_cast<float>(renderer.getScreenWidth()));
+    _chunkManager.print_chunkmanager_info(renderer, fheight, fwidth);
   }
+  renderer.renderUI("textures/cursor.png", fwidth / 2.0f, fheight / 2.0f, 0.4f,
+                    true);
 }
 
 std::string float_to_string(float f, int prec) {
