@@ -7,7 +7,10 @@
 #include "env.hpp"
 #include "renderer.hpp"
 
-enum class ShaderType { NORMAL };
+const int shader_types[3] = {GL_VERTEX_SHADER, GL_GEOMETRY_SHADER,
+                             GL_FRAGMENT_SHADER};
+
+const std::string shader_extensions[3] = {".vert", ".geom", ".frag"};
 
 struct ShaderFile {
   std::string filename;
@@ -16,28 +19,28 @@ struct ShaderFile {
 
 class Shader {
  public:
-  Shader(ShaderType type, std::string vertFilename, std::string fragFilename);
+  Shader(std::string shader, std::string = "", std::string = "");
   Shader(Shader const &src);
   ~Shader(void);
   Shader &operator=(Shader const &rhs);
 
   GLuint id;
-  ShaderType type;
   void use() const;
   void reload();
 
  private:
   Shader(void);
+  GLuint loadShader(std::string shader);
   GLuint loadVertex(std::string filename);
   GLuint loadFragment(std::string filename);
-  GLuint compileShader(const std::string source, GLuint shaderType);
+  GLuint compileShader(const std::string source, std::string filename,
+                       GLuint shaderType);
+  GLuint linkShaders(const std::array<GLuint, 3> shader_ids);
   GLuint linkShaders(GLuint vertexID, GLuint fragID);
   const std::string getShaderSource(std::string filename);
-  ShaderFile _vertex;
-  ShaderFile _fragment;
+  ShaderFile _shaders[3];
 };
 
 void printShaderError(GLuint shade, std::string filename);
-void printLinkError(GLuint program, std::string vextexFilename,
-                    std::string fragmentFilename);
+void printLinkError(GLuint program);
 std::time_t getLastModificationTime(std::string filename);

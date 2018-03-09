@@ -26,8 +26,7 @@ Renderer::Renderer(int width, int height)
       _cubeMapVao(nullptr),
       _cubeMapShader(nullptr),
       _polygonMode(PolygonMode::Fill) {
-  _shader =
-      new Shader(ShaderType::NORMAL, "shaders/vox.vert", "shaders/vox.frag");
+  _shader = new Shader("shaders/vox.vert", "shaders/vox.frag");
   try {
     _textureAtlas = new Texture("textures/terrain.png", 16, 16);
   } catch (std::runtime_error &e) {
@@ -145,8 +144,7 @@ void Renderer::loadCubeMap(std::string vertex_sha, std::string fragment_sha,
   } catch (std::runtime_error &e) {
     std::cerr << e.what() << std::endl;
   }
-  this->_cubeMapShader =
-      new Shader(ShaderType::NORMAL, vertex_sha, fragment_sha);
+  this->_cubeMapShader = new Shader(vertex_sha, fragment_sha);
   this->_cubeMapVao = new VAO(skyboxVertices);
 }
 
@@ -183,7 +181,7 @@ bool RenderAttrib::operator<(const struct RenderAttrib &rhs) const {
 }
 
 TextRenderer::TextRenderer(void) {
-  Shader shader(ShaderType::NORMAL, "shaders/text.vert", "shaders/text.frag");
+  Shader shader("shaders/text.vert", "shaders/text.frag");
   this->_shader_id = shader.id;
 
   unsigned int filesize = io::get_filesize("fonts/minecraft.ttf");
@@ -295,7 +293,7 @@ void TextRenderer::renderText(float pos_x, float pos_y, float scale,
 }
 
 UiRenderer::UiRenderer(void) {
-  Shader shader(ShaderType::NORMAL, "shaders/ui.vert", "shaders/ui.frag");
+  Shader shader("shaders/ui.vert", "shaders/ui.frag");
   this->_shader_id = shader.id;
 
   glGenVertexArrays(1, &this->_vao);
