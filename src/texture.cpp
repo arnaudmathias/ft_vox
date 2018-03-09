@@ -41,7 +41,7 @@ Texture::Texture(std::string filename) : id(0), filename(filename) {
     stbi_image_free(pixels);
     glBindTexture(GL_TEXTURE_2D, 0);
   } else {
-    throw std::runtime_error("Invalid texture file");
+    throw std::runtime_error("Cannot load texture (" + filename + ")");
   }
 }
 
@@ -92,7 +92,7 @@ Texture::Texture(std::string filename, int offset_x, int offset_y) {
     stbi_image_free(pixels);
     glBindTexture(GL_TEXTURE_2D, 0);
   } else {
-    throw std::runtime_error("Invalid texture file");
+    throw std::runtime_error("Cannot load texture (" + filename + ")");
   }
 }
 
@@ -109,7 +109,8 @@ Texture::Texture(const std::vector<std::string> &textures) : id(0) {
       stbi_image_free(data);
     } else {
       stbi_image_free(data);
-      throw std::runtime_error("Invalid cubemap texture file");
+      throw std::runtime_error("Cannot load cube map texture (" + textures[i] +
+                               ")");
     }
   }
   glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

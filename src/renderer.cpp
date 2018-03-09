@@ -28,8 +28,11 @@ Renderer::Renderer(int width, int height)
       _polygonMode(PolygonMode::Fill) {
   _shader =
       new Shader(ShaderType::NORMAL, "shaders/vox.vert", "shaders/vox.frag");
-  _textureAtlas = new Texture("textures/terrain.png", 16, 16);
-  std::cout << "texture id: " << _textureAtlas->id << std::endl;
+  try {
+    _textureAtlas = new Texture("textures/terrain.png", 16, 16);
+  } catch (std::runtime_error &e) {
+    std::cerr << e.what() << std::endl;
+  }
 }
 
 Renderer::Renderer(Renderer const &src) { *this = src; }
@@ -96,8 +99,10 @@ void Renderer::draw() {
   // std::sort(_renderAttribs.begin(), _renderAttribs.end());
   int shader_id = -1;
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D_ARRAY, _textureAtlas->id);
+  if (_textureAtlas) {
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, _textureAtlas->id);
+  }
   switchShader(_shader->id, shader_id);
   for (const auto &attrib : this->_renderAttribs) {
     updateUniforms(attrib, _shader->id);
@@ -116,7 +121,9 @@ void Renderer::draw() {
                glm::mat4(glm::mat3(this->uniforms.view)));
     setUniform(glGetUniformLocation(shader_id, "skybox"), 0);
     glBindVertexArray(this->_cubeMapVao->vao);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, this->_cubeMapTexture->id);
+    if (this->_cubeMapTexture) {
+      glBindTexture(GL_TEXTURE_CUBE_MAP, this->_cubeMapTexture->id);
+    }
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glDepthFunc(GL_LESS);
   }
@@ -133,7 +140,11 @@ int Renderer::getScreenHeight() { return (this->_height); }
 
 void Renderer::loadCubeMap(std::string vertex_sha, std::string fragment_sha,
                            const std::vector<std::string> &textures) {
-  this->_cubeMapTexture = new Texture(textures);
+  try {
+    this->_cubeMapTexture = new Texture(textures);
+  } catch (std::runtime_error &e) {
+    std::cerr << e.what() << std::endl;
+  }
   this->_cubeMapShader =
       new Shader(ShaderType::NORMAL, vertex_sha, fragment_sha);
   this->_cubeMapVao = new VAO(skyboxVertices);
@@ -322,8 +333,12 @@ void UiRenderer::renderUI(std::string texture_name, float pos_x, float pos_y,
   Texture *texture = nullptr;
   auto it = _texture_cache.find(texture_name);
   if (it == _texture_cache.end()) {
-    texture = new Texture(texture_name);
-    _texture_cache.emplace(texture_name, texture);
+    try {
+      texture = new Texture(texture_name);
+      _texture_cache.emplace(texture_name, texture);
+    } catch (std::runtime_error &e) {
+      std::cerr << e.what() << std::endl;
+    }
   } else {
     texture = it->second;
   }
