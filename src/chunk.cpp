@@ -63,6 +63,27 @@ void Chunk::mesh(enum MeshingType meshing_type) {
 
 const RenderAttrib& Chunk::getRenderAttrib() { return (this->_renderAttrib); }
 
+enum BlockSide get_face(std::string last_step, glm::ivec3 sign) {
+	if (last_step == "x") {
+		if (sign.x == -1) {
+			return BlockSide::Left;
+		}
+		return BlockSide::Right;
+	}
+	else if (last_step == "y") {
+		if (sign.y == 1) {
+			return BlockSide::Bottom;
+		}
+		return BlockSide::Up;
+	}
+	else {
+		if (sign.z == 1) {
+			return BlockSide::Back;
+		}
+		return BlockSide::Front;
+	}
+}
+
 inline Block Chunk::get_block(glm::ivec3 index) {
   if (index.x < 0 || index.x >= CHUNK_SIZE || index.y < 0 || index.y >= 256 ||
       index.z < 0 || index.z >= CHUNK_SIZE) {
@@ -103,6 +124,24 @@ void Chunk::forceFullRemesh() {
   for (int i = 0; i < MODEL_PER_CHUNK; i++) {
     this->dirty[i] = true;
   }
+}
+
+void ChunkManager::add_block(glm::ivec3 index) {
+	set_block(_current_block, index);
+}
+
+void ChunkManager::point_exploding(glm::ivec3 index, float intensity) {
+	float random;
+	srand(time(nullptr));
+	for (int x = index.x - intensity; x < index.x + intensity; x++) {
+		for (int y = index.y - intensity; y < index.y + intensity; y++) {
+			for (int z = index.z - intensity; z < index.z + intensity; z++) {
+				if (glm::distance(glm::vec3(x, y, z), glm::vec3(index)) < intensity)
+					set_block(Block(Material::Air), glm::ivec3(x, y, z));
+			}
+		}
+	}
+  //forceFullRemesh();
 }
 
 void Chunk::setDirty(int model_id) { dirty[model_id] = true; }
@@ -407,7 +446,7 @@ inline Block ChunkManager::get_block(glm::ivec3 index) {
   return (block);
 }
 
-inline void ChunkManager::set_block(Block block, glm::ivec3 index) {
+void ChunkManager::set_block(Block block, glm::ivec3 index) {
   glm::ivec2 chunk_pos =
       glm::ivec2((index.x >> 4) * CHUNK_SIZE, (index.z >> 4) * CHUNK_SIZE);
   auto chunk_it = _chunks.find(chunk_pos);
@@ -436,6 +475,7 @@ inline float intbound(float pos, float ds) {
   return (ds > 0.0f ? ceil(pos) - pos : pos - floor(pos)) / fabs(ds);
 }
 
+/*
 void ChunkManager::rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos,
                            float max_dist) {
   // http://www.cse.chalmers.se/edu/year/2011/course/TDA361/grid.pdf
@@ -485,6 +525,65 @@ void ChunkManager::rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos,
     set_block(air, pos);
   }
 }
+*/
+struct HitInfo ChunkManager::rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos,
+                           float max_dist) {
+  // http://www.cse.chalmers.se/edu/year/2011/course/TDA361/grid.pdf
+  glm::ivec3 pos = glm::floor(ray_pos);
+  struct HitInfo info = {};
+  bool sign;
+  std::string last_step = "none";
+  glm::ivec3 step;
+  step.x = ray_dir.x < 0.0f ? -1 : 1;
+  step.y = ray_dir.y < 0.0f ? -1 : 1;
+  step.z = ray_dir.z < 0.0f ? -1 : 1;
+  glm::vec3 tMax;
+  glm::vec3 delta = glm::vec3(step) / ray_dir;
+  tMax.x = intbound(ray_pos.x, ray_dir.x);
+  tMax.y = intbound(ray_pos.y, ray_dir.y);
+  tMax.z = intbound(ray_pos.z, ray_dir.z);
+  Block block(Material::Air);
+  info.hit = 0;
+  while (1) {
+    if (pos.y > 255 || pos.y < 0) {
+		info.hit = 0;
+      break;
+    }
+    if (block.material != Material::Air) {
+		info.hit = 1;
+      break;
+    }
+    if (tMax.x < tMax.y) {
+      if (tMax.x < tMax.z) {
+        if (tMax.x > max_dist) break;
+        pos.x += step.x;
+		last_step = "x";
+        tMax.x += delta.x;
+      } else {
+        if (tMax.z > max_dist) break;
+        pos.z += step.z;
+		last_step = "z";
+        tMax.z += delta.z;
+      }
+    } else {
+      if (tMax.y < tMax.z) {
+        if (tMax.y > max_dist) break;
+        pos.y += step.y;
+        tMax.y += delta.y;
+		last_step = "y";
+      } else {
+        if (tMax.z > max_dist) break;
+		last_step = "z";
+        pos.z += step.z;
+        tMax.z += delta.z;
+      }
+    }
+    block = get_block(pos);
+  }
+	info.side = get_face(last_step, step);
+	info.pos = pos;
+	return info;
+}
 
 void ChunkManager::setRenderDistance(unsigned char rd) {
   this->_renderDistance = rd;
@@ -501,6 +600,10 @@ void ChunkManager::decreaseRenderDistance() {
 void ChunkManager::setMeshingType(enum MeshingType type) {
   _meshing_type = type;
   reloadMesh();
+}
+
+void ChunkManager::setBlockType(struct Block type) {
+  _current_block = type;
 }
 
 void ChunkManager::reloadMesh() {

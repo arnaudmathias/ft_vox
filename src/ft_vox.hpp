@@ -17,6 +17,12 @@ enum class BlockSide : unsigned int { Front, Back, Left, Right, Bottom, Up };
 
 enum class Material : unsigned char { Air, Stone, Dirt, Sand, Bedrock };
 
+struct HitInfo {
+	bool hit;
+	enum BlockSide  side;
+	glm::ivec3 		pos;
+};
+
 enum class Biome : unsigned char {
   Water,
   Beach,
@@ -34,6 +40,8 @@ struct Block {
   enum Material material;
   bool operator==(const Block& rhs) const { return material == rhs.material; };
   bool operator!=(const Block& rhs) const { return material != rhs.material; };
+  Block(enum Material mat) : material(mat) {};
+  Block() : material(Material::Air) {};
 };
 
 struct Texture_lookup {

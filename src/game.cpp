@@ -20,10 +20,37 @@ Game& Game::operator=(Game const& rhs) {
 void Game::update(Env& env) {
   _camera->update(env);
   _chunkManager.update(_camera->pos);
-  if (env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_LEFT]) {
-    env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_LEFT] = false;
-    _chunkManager.rayCast(_camera->dir, _camera->pos, 5.0f);
-  }
+	if (env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_LEFT]) {
+		env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_LEFT] = false;
+		struct HitInfo rm_cube =  _chunkManager.rayCast(_camera->dir, _camera->pos, 5.0f);
+		_chunkManager.set_block(Block(Material::Air), rm_cube.pos);
+	}
+	if (env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_RIGHT]) {
+		env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_RIGHT] = false;
+		struct HitInfo add_cube =  _chunkManager.rayCast(_camera->dir, _camera->pos, 5.0f);
+		if (add_cube.hit) {
+			_chunkManager.add_block(add_cube.pos + glm::ivec3(mesher::get_normal(add_cube.side)));
+		}
+	}
+	if (env.inputHandler.keys[GLFW_KEY_KP_0]) {
+		env.inputHandler.keys[GLFW_KEY_KP_0] = false;
+		_chunkManager.setBlockType(Block(Material::Dirt));
+	}
+	if (env.inputHandler.keys[GLFW_KEY_KP_1]) {
+		env.inputHandler.keys[GLFW_KEY_KP_1] = false;
+		_chunkManager.setBlockType(Block(Material::Bedrock));
+	}
+	if (env.inputHandler.keys[GLFW_KEY_KP_2]) {
+		env.inputHandler.keys[GLFW_KEY_KP_2] = false;
+		_chunkManager.setBlockType(Block(Material::Sand));
+	}
+	if (env.inputHandler.keys[GLFW_KEY_T]) {
+		env.inputHandler.keys[GLFW_KEY_T] = false;
+		struct HitInfo add_cube =  _chunkManager.rayCast(_camera->dir, _camera->pos, 50.0f);
+		if (add_cube.hit) {
+			_chunkManager.point_exploding(add_cube.pos, 10.f);
+		}
+	}
   if (env.inputHandler.keys[GLFW_KEY_C]) {
     env.inputHandler.keys[GLFW_KEY_C] = false;
     _chunkManager.setMeshingType(MeshingType::Culling);

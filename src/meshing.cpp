@@ -73,6 +73,32 @@ const Texture_lookup textures[5] = {{-1, -1, -1, -1, -1, -1},
 
 namespace mesher {
 
+
+glm::vec3 get_normal(enum BlockSide side) {
+		glm::vec3 tmp;
+		switch (side) {
+			case BlockSide::Front :
+				tmp = glm::vec3(0.0, 0.0, 1.0);
+				break;
+			case BlockSide::Back:
+				tmp = glm::vec3(0.0, 0.0, -1.0);
+				break;
+			case BlockSide::Left:
+				tmp = glm::vec3(1.0, 0.0, 0.0);
+				break;
+			case BlockSide::Right:
+				tmp  = glm::vec3(-1.0, 0.0, 0.0);
+				break;
+			case BlockSide::Bottom:
+				tmp = glm::vec3(0.0, -1.0, 0.0);
+				break;
+			case BlockSide::Up:
+				tmp = glm::vec3(0.0, 1.0, 0.0) ; 
+				break;
+		}
+		return tmp;
+	}
+
 const std::vector<Vertex> getFace(Chunk *chunk, const Block &block,
                                   glm::ivec3 pos, enum BlockSide side,
                                   glm::vec3 scale) {

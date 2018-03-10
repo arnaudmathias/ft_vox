@@ -69,7 +69,7 @@ class ChunkManager {
   ChunkManager& operator=(ChunkManager const& rhs);
 
   void update(const glm::vec3& player_pos);
-  void rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos, float max_dist);
+  struct HitInfo rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos, float max_dist);
   void setRenderAttributes(Renderer& renderer, glm::vec3 player_pos);
   void setRenderDistance(unsigned char renderDistance);
   void print_chunkmanager_info(Renderer& renderer, float window_height,
@@ -77,11 +77,14 @@ class ChunkManager {
   void increaseRenderDistance();
   void decreaseRenderDistance();
   void setMeshingType(enum MeshingType type);
+  void setBlockType(struct Block type);
   void reloadMesh();
+  void set_block(Block block, glm::ivec3 index);
+  void point_exploding(glm::ivec3 index, float intensity);
+  void add_block(glm::ivec3 index);
 
  private:
   inline Block get_block(glm::ivec3 index);
-  inline void set_block(Block block, glm::ivec3 index);
   void addRegionToQueue(glm::ivec2 chunk_pos);
   void loadRegion(glm::ivec2 region_pos);
   void unloadRegion(glm::ivec2 region_pos);
@@ -99,4 +102,5 @@ class ChunkManager {
   uint32_t _seed;
   size_t _debug_chunks_rendered;
   enum MeshingType _meshing_type;
+  struct Block _current_block;
 };
