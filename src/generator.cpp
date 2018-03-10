@@ -57,15 +57,15 @@ float grad(int hash, float x, float y, float z) {
 
 int inc(int num) {
   num++;
-  num %= static_cast<uint32_t>(permutation.size() - 1);
+  num %= static_cast<uint32_t>((permutation.size() / 2) - 1);
   return num;
 }
 
 float gradientNoise3D(glm::vec3 pos) {
   glm::vec3 p = pos;
-  p.x = fmod(fabs(pos.x), static_cast<float>(permutation.size() - 1));
-  p.y = fmod(fabs(pos.y), static_cast<float>(permutation.size() - 1));
-  p.z = fmod(fabs(pos.z), static_cast<float>(permutation.size() - 1));
+  p.x = fmod(fabs(pos.x), static_cast<float>((permutation.size() / 2) - 1));
+  p.y = fmod(fabs(pos.y), static_cast<float>((permutation.size() / 2) - 1));
+  p.z = fmod(fabs(pos.z), static_cast<float>((permutation.size() / 2) - 1));
   int xi = static_cast<int>(floor(p.x));
   int yi = static_cast<int>(floor(p.y));
   int zi = static_cast<int>(floor(p.z));
@@ -98,8 +98,8 @@ float gradientNoise3D(glm::vec3 pos) {
 
 float gradientNoise2D(const glm::vec2 &pos) {
   glm::vec2 p = pos;
-  p.x = fmod(fabs(pos.x), static_cast<float>(permutation.size() - 1));
-  p.y = fmod(fabs(pos.y), static_cast<float>(permutation.size() - 1));
+  p.x = fmod(fabs(pos.x), static_cast<float>((permutation.size() / 2) - 1));
+  p.y = fmod(fabs(pos.y), static_cast<float>((permutation.size() / 2) - 1));
   int xi = static_cast<int>(floor(p.x));
   int yi = static_cast<int>(floor(p.y));
   float xf = glm::fract(p.x);
@@ -266,7 +266,6 @@ void init(uint32_t size, uint32_t seed) {
   std::default_random_engine engine(seed);
   std::shuffle(permutation.begin(), permutation.end(), engine);
   permutation.insert(permutation.end(), permutation.begin(), permutation.end());
-  std::cout << permutation.size() << std::endl;
 }
 
 }  // namespace generator

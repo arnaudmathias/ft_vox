@@ -26,7 +26,7 @@ class Camera {
   float zFar;
   float velocity;  // m/s
 
-  Camera(glm::vec3 pos, glm::vec3 target, int width = 0, int height = 0);
+  Camera(glm::vec3 pos, glm::vec3 target, int width = 1024, int height = 1024);
   void update(const Env &env);
   void rotate(float hor, float ver);  // in radians
   float getAspectRatio();

@@ -64,24 +64,22 @@ void Chunk::mesh(enum MeshingType meshing_type) {
 const RenderAttrib& Chunk::getRenderAttrib() { return (this->_renderAttrib); }
 
 enum BlockSide get_face(std::string last_step, glm::ivec3 sign) {
-	if (last_step == "x") {
-		if (sign.x == -1) {
-			return BlockSide::Left;
-		}
-		return BlockSide::Right;
-	}
-	else if (last_step == "y") {
-		if (sign.y == 1) {
-			return BlockSide::Bottom;
-		}
-		return BlockSide::Up;
-	}
-	else {
-		if (sign.z == 1) {
-			return BlockSide::Back;
-		}
-		return BlockSide::Front;
-	}
+  if (last_step == "x") {
+    if (sign.x == -1) {
+      return BlockSide::Left;
+    }
+    return BlockSide::Right;
+  } else if (last_step == "y") {
+    if (sign.y == 1) {
+      return BlockSide::Bottom;
+    }
+    return BlockSide::Up;
+  } else {
+    if (sign.z == 1) {
+      return BlockSide::Back;
+    }
+    return BlockSide::Front;
+  }
 }
 
 inline Block Chunk::get_block(glm::ivec3 index) {
@@ -104,6 +102,10 @@ inline Biome Chunk::get_biome(glm::ivec3 index) {
 }
 
 inline void Chunk::set_block(Block block, glm::ivec3 index) {
+  if (index.x < 0 || index.x >= CHUNK_SIZE || index.y < 0 || index.y >= 256 ||
+      index.z < 0 || index.z >= CHUNK_SIZE) {
+    return;
+  }
   this->data[index.y * CHUNK_SIZE * CHUNK_SIZE + index.x * CHUNK_SIZE +
              index.z] = block;
   this->dirty[index.y / MODEL_HEIGHT] = true;
@@ -127,21 +129,21 @@ void Chunk::forceFullRemesh() {
 }
 
 void ChunkManager::add_block(glm::ivec3 index) {
-	set_block(_current_block, index);
+  set_block(_current_block, index);
 }
 
 void ChunkManager::point_exploding(glm::ivec3 index, float intensity) {
-	float random;
-	srand(time(nullptr));
-	for (int x = index.x - intensity; x < index.x + intensity; x++) {
-		for (int y = index.y - intensity; y < index.y + intensity; y++) {
-			for (int z = index.z - intensity; z < index.z + intensity; z++) {
-				if (glm::distance(glm::vec3(x, y, z), glm::vec3(index)) < intensity)
-					set_block(Block(Material::Air), glm::ivec3(x, y, z));
-			}
-		}
-	}
-  //forceFullRemesh();
+  float random;
+  srand(time(nullptr));
+  for (int x = index.x - intensity; x < index.x + intensity; x++) {
+    for (int y = index.y - intensity; y < index.y + intensity; y++) {
+      for (int z = index.z - intensity; z < index.z + intensity; z++) {
+        if (glm::distance(glm::vec3(x, y, z), glm::vec3(index)) < intensity)
+          set_block(Block(Material::Air), glm::ivec3(x, y, z));
+      }
+    }
+  }
+  // forceFullRemesh();
 }
 
 void Chunk::setDirty(int model_id) { dirty[model_id] = true; }
@@ -200,14 +202,16 @@ inline unsigned int getNearestIdx(glm::vec2 position,
 
 void ChunkManager::update(const glm::vec3& player_pos) {
   if (to_update.size() > 0) {
-    unsigned int nearest_idx =
-        getNearestIdx(glm::vec2(player_pos.x, player_pos.z), to_update);
-    auto nearest_chunk_it = _chunks.find(to_update[nearest_idx]);
+    // unsigned int nearest_idx =
+    //   getNearestIdx(glm::vec2(player_pos.x, player_pos.z), to_update);
+    auto nearest_chunk_it = _chunks.find(to_update.front());
+    // auto nearest_chunk_it = _chunks.find(to_update[nearest_idx]);
     if (nearest_chunk_it != _chunks.end()) {
       nearest_chunk_it->second.mesh(this->_meshing_type);
       to_mesh.push_back(nearest_chunk_it->first);
     }
-    to_update.erase(to_update.begin() + nearest_idx);
+    to_update.pop_front();
+    // to_update.erase(to_update.begin() + nearest_idx);
   }
   // Find nearest chunk and gen it
   if (to_generate.size() > 0) {
@@ -456,18 +460,19 @@ void ChunkManager::set_block(Block block, glm::ivec3 index) {
     block_pos.y = index.y;
     block_pos.z = index.z - chunk_pos.y;
     if (_meshing_type == MeshingType::Greedy) {
-      // Block extents doesn't necessary match model boundary
-      // Query his real size to update every model impacted
-      /*glm::ivec3 size = mesher::get_interval(chunk_it->second.data, block_pos,
-                                             get_block(block_pos));
-      for (int i = block_pos.y - (size.y + 1); i < block_pos.y + (size.y + 1);
-           i++) {
-        chunk_it->second.setDirty(block_pos.y / MODEL_HEIGHT);
-      }*/
       chunk_it->second.forceFullRemesh();
     }
     chunk_it->second.set_block(block, block_pos);
-    to_update.push_back(chunk_it->first);
+    bool found = false;
+    for (int i = 0; i < to_update.size(); i++) {
+      if (to_update[i] == chunk_it->first) {
+        found = true;
+        break;
+      }
+    }
+    if (found == false) {
+      to_update.push_back(chunk_it->first);
+    }
   }
 }
 
@@ -476,58 +481,58 @@ inline float intbound(float pos, float ds) {
 }
 
 /*
-void ChunkManager::rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos,
-                           float max_dist) {
-  // http://www.cse.chalmers.se/edu/year/2011/course/TDA361/grid.pdf
-  glm::ivec3 pos = glm::floor(ray_pos);
-  glm::ivec3 step;
-  step.x = ray_dir.x < 0.0f ? -1 : 1;
-  step.y = ray_dir.y < 0.0f ? -1 : 1;
-  step.z = ray_dir.z < 0.0f ? -1 : 1;
-  glm::vec3 tMax;
-  glm::vec3 delta = glm::vec3(step) / ray_dir;
-  tMax.x = intbound(ray_pos.x, ray_dir.x);
-  tMax.y = intbound(ray_pos.y, ray_dir.y);
-  tMax.z = intbound(ray_pos.z, ray_dir.z);
-  Block block = {};
-  while (1) {
-    if (pos.y > 255 || pos.y < 0) {
-      break;
-    }
-    if (block.material != Material::Air) {
-      break;
-    }
-    if (tMax.x < tMax.y) {
-      if (tMax.x < tMax.z) {
-        if (tMax.x > max_dist) break;
-        pos.x += step.x;
-        tMax.x += delta.x;
-      } else {
-        if (tMax.z > max_dist) break;
-        pos.z += step.z;
-        tMax.z += delta.z;
-      }
-    } else {
-      if (tMax.y < tMax.z) {
-        if (tMax.y > max_dist) break;
-        pos.y += step.y;
-        tMax.y += delta.y;
-      } else {
-        if (tMax.z > max_dist) break;
-        pos.z += step.z;
-        tMax.z += delta.z;
-      }
-    }
-    block = get_block(pos);
-  }
-  if (block.material != Material::Air) {
-    Block air = {};
-    set_block(air, pos);
-  }
+   void ChunkManager::rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos,
+   float max_dist) {
+// http://www.cse.chalmers.se/edu/year/2011/course/TDA361/grid.pdf
+glm::ivec3 pos = glm::floor(ray_pos);
+glm::ivec3 step;
+step.x = ray_dir.x < 0.0f ? -1 : 1;
+step.y = ray_dir.y < 0.0f ? -1 : 1;
+step.z = ray_dir.z < 0.0f ? -1 : 1;
+glm::vec3 tMax;
+glm::vec3 delta = glm::vec3(step) / ray_dir;
+tMax.x = intbound(ray_pos.x, ray_dir.x);
+tMax.y = intbound(ray_pos.y, ray_dir.y);
+tMax.z = intbound(ray_pos.z, ray_dir.z);
+Block block = {};
+while (1) {
+if (pos.y > 255 || pos.y < 0) {
+break;
+}
+if (block.material != Material::Air) {
+break;
+}
+if (tMax.x < tMax.y) {
+if (tMax.x < tMax.z) {
+if (tMax.x > max_dist) break;
+pos.x += step.x;
+tMax.x += delta.x;
+} else {
+if (tMax.z > max_dist) break;
+pos.z += step.z;
+tMax.z += delta.z;
+}
+} else {
+if (tMax.y < tMax.z) {
+if (tMax.y > max_dist) break;
+pos.y += step.y;
+tMax.y += delta.y;
+} else {
+if (tMax.z > max_dist) break;
+pos.z += step.z;
+tMax.z += delta.z;
+}
+}
+block = get_block(pos);
+}
+if (block.material != Material::Air) {
+Block air = {};
+set_block(air, pos);
+}
 }
 */
 struct HitInfo ChunkManager::rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos,
-                           float max_dist) {
+                                     float max_dist) {
   // http://www.cse.chalmers.se/edu/year/2011/course/TDA361/grid.pdf
   glm::ivec3 pos = glm::floor(ray_pos);
   struct HitInfo info = {};
@@ -546,23 +551,23 @@ struct HitInfo ChunkManager::rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos,
   info.hit = 0;
   while (1) {
     if (pos.y > 255 || pos.y < 0) {
-		info.hit = 0;
+      info.hit = 0;
       break;
     }
     if (block.material != Material::Air) {
-		info.hit = 1;
+      info.hit = 1;
       break;
     }
     if (tMax.x < tMax.y) {
       if (tMax.x < tMax.z) {
         if (tMax.x > max_dist) break;
         pos.x += step.x;
-		last_step = "x";
+        last_step = "x";
         tMax.x += delta.x;
       } else {
         if (tMax.z > max_dist) break;
         pos.z += step.z;
-		last_step = "z";
+        last_step = "z";
         tMax.z += delta.z;
       }
     } else {
@@ -570,19 +575,19 @@ struct HitInfo ChunkManager::rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos,
         if (tMax.y > max_dist) break;
         pos.y += step.y;
         tMax.y += delta.y;
-		last_step = "y";
+        last_step = "y";
       } else {
         if (tMax.z > max_dist) break;
-		last_step = "z";
+        last_step = "z";
         pos.z += step.z;
         tMax.z += delta.z;
       }
     }
     block = get_block(pos);
   }
-	info.side = get_face(last_step, step);
-	info.pos = pos;
-	return info;
+  info.side = get_face(last_step, step);
+  info.pos = pos;
+  return info;
 }
 
 void ChunkManager::setRenderDistance(unsigned char rd) {
@@ -602,9 +607,7 @@ void ChunkManager::setMeshingType(enum MeshingType type) {
   reloadMesh();
 }
 
-void ChunkManager::setBlockType(struct Block type) {
-  _current_block = type;
-}
+void ChunkManager::setBlockType(struct Block type) { _current_block = type; }
 
 void ChunkManager::reloadMesh() {
   to_mesh.clear();
@@ -625,6 +628,7 @@ void ChunkManager::print_chunkmanager_info(Renderer& renderer, float fheight,
       glm::vec3(1.0f, 1.0f, 1.0f));
   renderer.renderText(10.0f, fheight - 100.0f, 0.35f,
                       "queue: mesh(" + std::to_string(to_mesh.size()) +
+                          ") priority(" + std::to_string(to_update.size()) +
                           ") generate(" + std::to_string(to_generate.size()) +
                           ") unload(" + std::to_string(to_unload.size()) + ")",
                       glm::vec3(1.0f, 1.0f, 1.0f));
