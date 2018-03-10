@@ -9,8 +9,6 @@
 
 class InputHandler {
  public:
-  int screenWidth;
-  int screenHeight;
   std::array<bool, 1024> keys = {{0}};
   bool mouseDisabled = true;
   bool keybrDisabled = true;
@@ -27,6 +25,7 @@ class Env {
   Env(unsigned short width, unsigned short height);
   ~Env();
 
+  void toggleFullscreen();
   void update();  // Called once per frame
   float getDeltaTime() const;
   float getAbsoluteTime() const;
@@ -38,10 +37,16 @@ class Env {
  private:
   void updateFpsCounter();
   void setDeltaTime();
+  void setupContext();
+  void setupWindow();
+  void setupWindowHint();
   float _absoluteTime;
   float _deltaTime;
   float _frame;
   float _fps;
+  bool _fullscreen = false;
+  bool _window_width;
+  bool _window_height;
 };
 
 void keyCallback(GLFWwindow *window, int key, int scancode, int action,

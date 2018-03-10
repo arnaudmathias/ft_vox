@@ -98,6 +98,7 @@ void Renderer::draw() {
   // std::sort(_renderAttribs.begin(), _renderAttribs.end());
   int shader_id = -1;
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glViewport(0, 0, _width, _height);
   if (_textureAtlas) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D_ARRAY, _textureAtlas->id);
@@ -127,6 +128,13 @@ void Renderer::draw() {
     glDepthFunc(GL_LESS);
   }
   glBindVertexArray(0);
+}
+
+void Renderer::update(const Env &env) {
+  if (env.width != _width || env.height != _height) {
+    _width = env.width;
+    _height = env.height;
+  }
 }
 
 void Renderer::flush() { this->_renderAttribs.clear(); }

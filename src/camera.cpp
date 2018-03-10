@@ -57,6 +57,8 @@ void Camera::update(const Env &env) {
         glm::radians(80.0f),
         static_cast<float>(env.width) / static_cast<float>(env.height), zNear,
         zFar);
+    width = env.width;
+    height = env.height;
   }
   if (env.inputHandler.keys[GLFW_KEY_LEFT_SHIFT]) {
     speed = 20.0f;

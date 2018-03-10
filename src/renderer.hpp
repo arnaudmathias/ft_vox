@@ -76,6 +76,7 @@ class Renderer {
                   glm::vec3 color);
   void renderUI(std::string filename, float pos_x, float pos_y, float scale,
                 bool centered);
+  void update(const Env& env);
   void draw();
   void flush();
   void reset();

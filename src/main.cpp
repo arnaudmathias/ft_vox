@@ -30,10 +30,11 @@ int main(int argc, char **argv) {
     env.update();
     glfwPollEvents();
     game.update(env);
+    renderer.update(env);
     renderer.clearScreen();
     game.render(env, renderer);
     glfwSwapBuffers(env.window);
-    GL_DUMP_ERROR("draw loop");
+    // GL_DUMP_ERROR("draw loop");
     if (env.inputHandler.keys[GLFW_KEY_ESCAPE]) {
       glfwSetWindowShouldClose(env.window, 1);
     }
@@ -42,6 +43,10 @@ int main(int argc, char **argv) {
       wireframe = !wireframe;
       renderer.switchPolygonMode(wireframe ? PolygonMode::Line
                                            : PolygonMode::Fill);
+    }
+    if (env.inputHandler.keys[GLFW_KEY_F]) {
+      env.inputHandler.keys[GLFW_KEY_F] = false;
+      // env.toggleFullscreen();
     }
   }
   return (EXIT_SUCCESS);

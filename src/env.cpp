@@ -5,10 +5,9 @@ Env::Env() : Env(0, 0) {}
 Env::Env(unsigned short width, unsigned short height)
     : width(width), height(height), _frame(0) {
   if (!glfwInit()) return;
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  setupWindowHint();
+  _window_width = 1280;
+  _window_height = 720;
   if (width == 0 && height == 0) {
     GLFWmonitor *primary_monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode *mode = glfwGetVideoMode(primary_monitor);
@@ -31,15 +30,64 @@ Env::Env(unsigned short width, unsigned short height)
   std::cout << "OpenGL " << glGetString(GL_VERSION) << std::endl;
   std::cout << "GLSL " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
-  inputHandler.screenWidth = width;
-  inputHandler.screenHeight = height;
   inputHandler.mouseDisabled = false;
 
-  glfwSetWindowUserPointer(window, &inputHandler);
-  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-  glfwSetCursorPosCallback(window, mouseCallback);
-  glfwSetKeyCallback(window, keyCallback);
-  glfwSetMouseButtonCallback(window, mouseKeyCallback);
+  setupWindow();
+  setupContext();
+}
+
+Env::~Env() { glfwTerminate(); }
+
+void Env::toggleFullscreen() {
+  _fullscreen = !_fullscreen;
+  glfwDestroyWindow(window);
+  setupWindowHint();
+  if (_fullscreen) {
+    GLFWmonitor *primary_monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode *mode = glfwGetVideoMode(primary_monitor);
+    this->width = mode->width;
+    this->height = mode->height;
+    window = glfwCreateWindow(this->width, this->height, "ft_vox",
+                              primary_monitor, NULL);
+  } else {
+    window =
+        glfwCreateWindow(_window_width, _window_height, "ft_vox", NULL, NULL);
+    this->width = _window_width;
+    this->height = _window_height;
+  }
+  if (!window) {
+    std::cout << "Could not create window\n";
+    glfwTerminate();
+    return;
+  }
+  glfwMakeContextCurrent(window);
+  GL_DUMP_ERROR("MakeContextCurrent");
+  setupWindow();
+  setupContext();
+  GL_DUMP_ERROR("SetupContext");
+  int wview, hview;
+  glfwGetFramebufferSize(window, &wview, &hview);
+  glViewport(0, 0, wview, hview);
+}
+
+void Env::setupWindowHint() {
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+}
+
+void Env::setupWindow() {
+  if (window != nullptr) {
+    glfwSetWindowUserPointer(window, &inputHandler);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetCursorPosCallback(window, mouseCallback);
+    glfwSetKeyCallback(window, keyCallback);
+    glfwSetMouseButtonCallback(window, mouseKeyCallback);
+  }
+}
+
+void Env::setupContext() {
   glfwSwapInterval(0);
   glEnable(GL_DEBUG_OUTPUT);
   while (glGetError() != GL_NO_ERROR)
@@ -49,8 +97,6 @@ Env::Env(unsigned short width, unsigned short height)
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
-
-Env::~Env() { glfwTerminate(); }
 
 void Env::update() {
   updateFpsCounter();
