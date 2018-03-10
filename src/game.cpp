@@ -1,6 +1,8 @@
 #include "game.hpp"
 
-Game::Game(void) {
+Game::Game(void) : Game(42) {}
+
+Game::Game(uint32_t seed) : _chunkManager(seed) {
   _camera =
       new Camera(glm::vec3(0.0f, 125.0f, 1.0f), glm::vec3(0.0f, 125.0f, 0.0f));
 }
@@ -20,37 +22,41 @@ Game& Game::operator=(Game const& rhs) {
 void Game::update(Env& env) {
   _camera->update(env);
   _chunkManager.update(_camera->pos);
-	if (env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_LEFT]) {
-		env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_LEFT] = false;
-		struct HitInfo rm_cube =  _chunkManager.rayCast(_camera->dir, _camera->pos, 5.0f);
-		_chunkManager.set_block(Block(Material::Air), rm_cube.pos);
-	}
-	if (env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_RIGHT]) {
-		env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_RIGHT] = false;
-		struct HitInfo add_cube =  _chunkManager.rayCast(_camera->dir, _camera->pos, 5.0f);
-		if (add_cube.hit) {
-			_chunkManager.add_block(add_cube.pos + glm::ivec3(mesher::get_normal(add_cube.side)));
-		}
-	}
-	if (env.inputHandler.keys[GLFW_KEY_KP_0]) {
-		env.inputHandler.keys[GLFW_KEY_KP_0] = false;
-		_chunkManager.setBlockType(Block(Material::Dirt));
-	}
-	if (env.inputHandler.keys[GLFW_KEY_KP_1]) {
-		env.inputHandler.keys[GLFW_KEY_KP_1] = false;
-		_chunkManager.setBlockType(Block(Material::Bedrock));
-	}
-	if (env.inputHandler.keys[GLFW_KEY_KP_2]) {
-		env.inputHandler.keys[GLFW_KEY_KP_2] = false;
-		_chunkManager.setBlockType(Block(Material::Sand));
-	}
-	if (env.inputHandler.keys[GLFW_KEY_T]) {
-		env.inputHandler.keys[GLFW_KEY_T] = false;
-		struct HitInfo add_cube =  _chunkManager.rayCast(_camera->dir, _camera->pos, 50.0f);
-		if (add_cube.hit) {
-			_chunkManager.point_exploding(add_cube.pos, 10.f);
-		}
-	}
+  if (env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_LEFT]) {
+    env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_LEFT] = false;
+    struct HitInfo rm_cube =
+	_chunkManager.rayCast(_camera->dir, _camera->pos, 5.0f);
+    _chunkManager.set_block(Block(Material::Air), rm_cube.pos);
+  }
+  if (env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_RIGHT]) {
+    env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_RIGHT] = false;
+    struct HitInfo add_cube =
+	_chunkManager.rayCast(_camera->dir, _camera->pos, 5.0f);
+    if (add_cube.hit) {
+      _chunkManager.add_block(add_cube.pos +
+			      glm::ivec3(mesher::get_normal(add_cube.side)));
+    }
+  }
+  if (env.inputHandler.keys[GLFW_KEY_KP_0]) {
+    env.inputHandler.keys[GLFW_KEY_KP_0] = false;
+    _chunkManager.setBlockType(Block(Material::Dirt));
+  }
+  if (env.inputHandler.keys[GLFW_KEY_KP_1]) {
+    env.inputHandler.keys[GLFW_KEY_KP_1] = false;
+    _chunkManager.setBlockType(Block(Material::Bedrock));
+  }
+  if (env.inputHandler.keys[GLFW_KEY_KP_2]) {
+    env.inputHandler.keys[GLFW_KEY_KP_2] = false;
+    _chunkManager.setBlockType(Block(Material::Sand));
+  }
+  if (env.inputHandler.keys[GLFW_KEY_T]) {
+    env.inputHandler.keys[GLFW_KEY_T] = false;
+    struct HitInfo add_cube =
+	_chunkManager.rayCast(_camera->dir, _camera->pos, 50.0f);
+    if (add_cube.hit) {
+      _chunkManager.point_exploding(add_cube.pos, 10.f);
+    }
+  }
   if (env.inputHandler.keys[GLFW_KEY_C]) {
     env.inputHandler.keys[GLFW_KEY_C] = false;
     _chunkManager.setMeshingType(MeshingType::Culling);
@@ -87,7 +93,7 @@ void Game::render(const Env& env, Renderer& renderer) {
     _chunkManager.print_chunkmanager_info(renderer, fheight, fwidth);
   }
   renderer.renderUI("textures/cursor.png", fwidth / 2.0f, fheight / 2.0f, 0.4f,
-                    true);
+		    true);
 }
 
 std::string float_to_string(float f, int prec) {
@@ -97,18 +103,18 @@ std::string float_to_string(float f, int prec) {
 }
 
 void Game::print_debug_info(const Env& env, Renderer& renderer,
-                            Camera& camera) {
+			    Camera& camera) {
   float fheight = static_cast<float>(renderer.getScreenHeight());
   float fwidth = static_cast<float>(renderer.getScreenWidth());
   renderer.renderText(10.0f, fheight - 25.0f, 0.35f,
-                      "x: " + float_to_string(camera.pos.x, 2) +
-                          " y: " + float_to_string(camera.pos.y, 2) +
-                          " z: " + float_to_string(camera.pos.z, 2),
-                      glm::vec3(1.0f, 1.0f, 1.0f));
+		      "x: " + float_to_string(camera.pos.x, 2) +
+			  " y: " + float_to_string(camera.pos.y, 2) +
+			  " z: " + float_to_string(camera.pos.z, 2),
+		      glm::vec3(1.0f, 1.0f, 1.0f));
   renderer.renderText(10.0f, fheight - 50.0f, 0.35f,
-                      "vel: " + float_to_string(camera.velocity, 2) + " m/s",
-                      glm::vec3(1.0f, 1.0f, 1.0f));
+		      "vel: " + float_to_string(camera.velocity, 2) + " m/s",
+		      glm::vec3(1.0f, 1.0f, 1.0f));
   renderer.renderText(fwidth - 130.0f, fheight - 25.0f, 0.35f,
-                      float_to_string(env.getFPS(), 2) + " fps",
-                      glm::vec3(1.0f, 1.0f, 1.0f));
+		      float_to_string(env.getFPS(), 2) + " fps",
+		      glm::vec3(1.0f, 1.0f, 1.0f));
 }

@@ -5,6 +5,18 @@
 #include "renderer.hpp"
 
 int main(int argc, char **argv) {
+  uint32_t seed = 42;
+  if (argc > 2 || strcmp(argv[0], "./ft_vox") != 0) {
+    std::cout << "Usage: ./ft_vox [seed]" << std::endl;
+    return (EXIT_FAILURE);
+  }
+  if (argc == 2) {
+    try {
+      seed = std::stoi(argv[1]);
+    } catch (std::exception &e) {
+      std::cerr << e.what() << std::endl;
+    }
+  }
   Env env(1280, 720);
   Renderer renderer(env.width, env.height);
   renderer.loadCubeMap(
@@ -12,7 +24,7 @@ int main(int argc, char **argv) {
       {"textures/skybox_side.png", "textures/skybox_side.png",
        "textures/skybox_up.png", "textures/skybox_bottom.png",
        "textures/skybox_side.png", "textures/skybox_side.png"});
-  Game game;
+  Game game(seed);
   bool wireframe = false;
   while (!glfwWindowShouldClose(env.window)) {
     env.update();
@@ -32,4 +44,5 @@ int main(int argc, char **argv) {
                                            : PolygonMode::Fill);
     }
   }
+  return (EXIT_SUCCESS);
 }

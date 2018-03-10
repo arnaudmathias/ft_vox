@@ -6,7 +6,7 @@
 #include "renderer.hpp"
 class Game {
  public:
-  Game(void);
+  Game(uint32_t);
   Game(Game const& src);
   virtual ~Game(void);
   Game& operator=(Game const& rhs);
@@ -14,6 +14,7 @@ class Game {
   void render(const Env& env, Renderer& renderer);
 
  private:
+  Game(void);
   ChunkManager _chunkManager;
   bool _debugMode;
   Camera* _camera;
