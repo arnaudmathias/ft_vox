@@ -3,20 +3,29 @@
 Env::Env() : Env(0, 0) {}
 
 Env::Env(unsigned short width, unsigned short height)
-    : width(width), height(height), _frame(0) {
+    : width(width),
+      height(height),
+      _frame(0),
+      _window_width(1280),
+      _window_height(720) {
   if (!glfwInit()) return;
   setupWindowHint();
-  _window_width = 1280;
-  _window_height = 720;
+  GLFWmonitor *primary_monitor = glfwGetPrimaryMonitor();
+  const GLFWvidmode *mode = glfwGetVideoMode(primary_monitor);
   if (width == 0 && height == 0) {
-    GLFWmonitor *primary_monitor = glfwGetPrimaryMonitor();
-    const GLFWvidmode *mode = glfwGetVideoMode(primary_monitor);
     this->width = mode->width;
     this->height = mode->height;
     window = glfwCreateWindow(this->width, this->height, "ft_vox",
                               primary_monitor, NULL);
+    glfwSetWindowMonitor(window, primary_monitor, 0, 0, mode->width,
+                         mode->height, mode->refreshRate);
   } else {
+    _window_width = width;
+    _window_height = height;
     window = glfwCreateWindow(width, height, "ft_vox", NULL, NULL);
+    glfwSetWindowMonitor(window, NULL, (mode->width / 2) - (_window_width / 2),
+                         (mode->height / 2) - (_window_height / 2),
+                         _window_width, _window_height, 0);
   }
   if (!window) {
     std::cout << "Could not create window\n";
@@ -40,34 +49,24 @@ Env::~Env() { glfwTerminate(); }
 
 void Env::toggleFullscreen() {
   _fullscreen = !_fullscreen;
-  glfwDestroyWindow(window);
-  setupWindowHint();
+  GLFWmonitor *primary_monitor = glfwGetPrimaryMonitor();
+  const GLFWvidmode *mode = glfwGetVideoMode(primary_monitor);
   if (_fullscreen) {
-    GLFWmonitor *primary_monitor = glfwGetPrimaryMonitor();
-    const GLFWvidmode *mode = glfwGetVideoMode(primary_monitor);
+    glfwSetWindowMonitor(window, primary_monitor, 0, 0, mode->width,
+                         mode->height, mode->refreshRate);
     this->width = mode->width;
     this->height = mode->height;
-    window = glfwCreateWindow(this->width, this->height, "ft_vox",
-                              primary_monitor, NULL);
   } else {
-    window =
-        glfwCreateWindow(_window_width, _window_height, "ft_vox", NULL, NULL);
+    glfwSetWindowMonitor(window, NULL, (mode->width / 2) - (_window_width / 2),
+                         (mode->height / 2) - (_window_height / 2),
+                         _window_width, _window_height, 0);
     this->width = _window_width;
     this->height = _window_height;
   }
-  if (!window) {
-    std::cout << "Could not create window\n";
-    glfwTerminate();
-    return;
-  }
-  glfwMakeContextCurrent(window);
-  GL_DUMP_ERROR("MakeContextCurrent");
-  setupWindow();
-  setupContext();
-  GL_DUMP_ERROR("SetupContext");
-  int wview, hview;
-  glfwGetFramebufferSize(window, &wview, &hview);
-  glViewport(0, 0, wview, hview);
+  // Query and update framebuffer size
+  int wframe, hframe;
+  glfwGetFramebufferSize(window, &wframe, &hframe);
+  glViewport(0, 0, wframe, hframe);
 }
 
 void Env::setupWindowHint() {
@@ -75,6 +74,7 @@ void Env::setupWindowHint() {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
 }
 
 void Env::setupWindow() {

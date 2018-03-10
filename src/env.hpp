@@ -45,8 +45,8 @@ class Env {
   float _frame;
   float _fps;
   bool _fullscreen = false;
-  bool _window_width;
-  bool _window_height;
+  int _window_width;
+  int _window_height;
 };
 
 void keyCallback(GLFWwindow *window, int key, int scancode, int action,

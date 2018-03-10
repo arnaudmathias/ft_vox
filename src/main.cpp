@@ -6,7 +6,7 @@
 
 int main(int argc, char **argv) {
   uint32_t seed = 42;
-  if (argc > 2 || strcmp(argv[0], "./ft_vox") != 0) {
+  if (argc > 2) {
     std::cout << "Usage: ./ft_vox [seed]" << std::endl;
     return (EXIT_FAILURE);
   }
@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
     }
     if (env.inputHandler.keys[GLFW_KEY_F]) {
       env.inputHandler.keys[GLFW_KEY_F] = false;
-      // env.toggleFullscreen();
+      env.toggleFullscreen();
     }
   }
   return (EXIT_SUCCESS);
