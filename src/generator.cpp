@@ -28,6 +28,8 @@ inline float noise3D(const glm::vec3 &v) {
          1.0f;
 }
 
+enum treeType { BOULE, PROCEDURAL};
+
 template <typename T>
 inline float lerp(T a, T b, T x) {
   return (a + x * (b - a));
@@ -48,6 +50,10 @@ inline float trilinear_lerp(T v000, T v001, T v010, T v011, T v100, T v101,
   return (lerp(a, b, z));
 }
 float fade(float t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+
+inline Block get_block(Block *data, glm::ivec3 index) {
+  return data[index.y * CHUNK_SIZE * CHUNK_SIZE + index.x * CHUNK_SIZE + index.z];
+}
 
 float grad(int hash, float x, float y, float z) {
   int h = hash & 15;
@@ -201,6 +207,34 @@ enum Biome get_biome(float elevation) {
     return Biome::Desert;
 }
 
+
+void gen_boule(glm::ivec3 pos, Block *data) {
+	float age = static_cast<int>((rand() / static_cast<float>(RAND_MAX)) * 2.0) + 5;
+	int cube_size = static_cast<int>(age) / 2;
+	Block wood(Material::Wood);
+	Block leaf(Material::Leaf);
+
+	for (int i = 0; i < age; i++) {
+          set_block(data, wood, glm::ivec3(pos.x, pos.y + i, pos.z));
+	}
+	for (int x = pos.x - cube_size; x <= pos.x + cube_size; x++) {
+		for (int y = pos.y + age - cube_size / 2; y <= pos.y + age + cube_size / 2; y++) {
+			for (int z = pos.z - cube_size; z <= pos.z + cube_size; z++) {
+          		set_block(data, leaf, glm::ivec3(x, y, z));
+			}
+		}
+	}
+}
+
+void gen_tree(glm::ivec3 pos, treeType type, Block *data) {
+	switch (type) {
+		case treeType::BOULE :
+			gen_boule(pos, data);
+			break;
+		default :;
+	}
+}
+
 void generate_chunk(Block *data, Biome *biome_data, glm::vec3 pos) {
   pos += permutation.size() / 2;
   for (int x = 0; x < 16; x++) {
@@ -219,11 +253,17 @@ void generate_chunk(Block *data, Biome *biome_data, glm::vec3 pos) {
       float terrain_value = perlin2D(glm::vec2(pos.x + x, pos.z + z), 4, 0.1f,
                                      0.5f, {0.005f, 0.005f});
 
+      float density_value = perlin2D(glm::vec2(pos.x + x, pos.z + z), 10, 0.2f,
+                                     1.f, {0.005f, 0.005f});
+
+	  float max_height = 0.0;
+
       float h_map = (1.0f - terrain_value) * flat_base_value +
                     (terrain_value)*mountain_value;
       Biome biome = get_biome(h_map);
       biome_data[x * CHUNK_SIZE + z] = biome;
       int height = static_cast<int>(round(256.0f * h_map));
+	  float h_cave = 0.0;
       for (int y = 0; y < height; y++) {
         Block block;
         if (y == 0) {
@@ -245,20 +285,35 @@ void generate_chunk(Block *data, Biome *biome_data, glm::vec3 pos) {
             block.material = Material::Stone;
           }
         }
-        float h_cave = perlin3D(glm::vec3(pos.x + x, pos.y + y, pos.z + z), 4,
+        h_cave = perlin3D(glm::vec3(pos.x + x, pos.y + y, pos.z + z), 4,
                                 0.9f, 1.0f, {0.01f, 0.004f, 0.01f});
         if (y == 0 || h_cave < 0.63) {
           set_block(data, block, glm::ivec3(x, y, z));
         }
       }
+	  float sdensity = 0.4;
+	  float srd = 0.998;
+	  //float rd = rand() / static_cast<float>(RAND_MAX);
+	  float opa = 1 - (density_value / sdensity);
+      float n = perlin2D(glm::vec2(pos.x + x, pos.z + z), 40, 0.1f,
+                                     1.f, {0.5f, 0.5f});
+	  std::cout << n << std::endl;
+
+	  if (density_value > sdensity && n > 0.75 && h_cave < 0.63 && biome == Biome::Forest) {
+	 		gen_tree(glm::ivec3(x, height, z), treeType::BOULE, data); 
+	  }
     }
   }
 }
 
 inline void set_block(Block *data, Block block, glm::ivec3 index) {
+	if (!(index.x < 0 || index.y < 0 | index.z < 0 ||
+			index.x >= CHUNK_SIZE || index.z >= CHUNK_SIZE || index.y > CHUNK_HEIGHT))
   data[index.y * CHUNK_SIZE * CHUNK_SIZE + index.x * CHUNK_SIZE + index.z] =
       block;
 }
+
+
 
 void init(uint32_t size, uint32_t seed) {
   permutation.resize(size / 2);

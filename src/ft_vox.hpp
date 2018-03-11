@@ -15,7 +15,7 @@
 
 enum class BlockSide : unsigned int { Front, Back, Left, Right, Bottom, Up };
 
-enum class Material : unsigned char { Air, Stone, Dirt, Sand, Bedrock };
+enum class Material : unsigned char { Air, Stone, Dirt, Sand, Bedrock, Wood, Leaf};
 
 struct HitInfo {
   bool hit;
