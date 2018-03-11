@@ -97,7 +97,7 @@ void Env::setupWindow() {
 }
 
 void Env::setupContext() {
-  glfwSwapInterval(1);
+  glfwSwapInterval(0);
   glEnable(GL_DEBUG_OUTPUT);
   while (glGetError() != GL_NO_ERROR)
     ;  // Flush gl_error
@@ -105,6 +105,7 @@ void Env::setupContext() {
   glDepthFunc(GL_LESS);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glEnable(GL_CULL_FACE);
 }
 
 void Env::update() {
