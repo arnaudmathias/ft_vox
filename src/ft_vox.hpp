@@ -18,9 +18,9 @@ enum class BlockSide : unsigned int { Front, Back, Left, Right, Bottom, Up };
 enum class Material : unsigned char { Air, Stone, Dirt, Sand, Bedrock };
 
 struct HitInfo {
-	bool hit;
-	enum BlockSide  side;
-	glm::ivec3 		pos;
+  bool hit;
+  enum BlockSide side;
+  glm::ivec3 pos;
 };
 
 enum class Biome : unsigned char {
@@ -40,8 +40,8 @@ struct Block {
   enum Material material;
   bool operator==(const Block& rhs) const { return material == rhs.material; };
   bool operator!=(const Block& rhs) const { return material != rhs.material; };
-  Block(enum Material mat) : material(mat) {};
-  Block() : material(Material::Air) {};
+  Block(enum Material mat) : material(mat){};
+  Block() : material(Material::Air){};
 };
 
 struct Texture_lookup {
@@ -50,7 +50,7 @@ struct Texture_lookup {
 
 struct Vertex {
   glm::vec4 position = {0, 0, 0, 0};
-  glm::vec2 attribs = {0, 0};
+  float attribs = {0};
   Vertex() : position({0.0f, 0.0f, 0.0f, 0.0f}){};
   Vertex(Vertex const& src) { *this = src; }
   Vertex& operator=(Vertex const& rhs) {

@@ -25,8 +25,8 @@ void Camera::updateMatrix() {
   deltaTime = static_cast<float>(currentTime - lastTime);
   lastTime = static_cast<float>(currentTime);
   if (mouseMoved) {
-    horAngle += 0.2f * deltaTime * (oldMouseXpos - mouseXpos);
-    verAngle += 0.2f * deltaTime * (oldMouseYpos - mouseYpos);
+    horAngle += 0.1f * deltaTime * (oldMouseXpos - mouseXpos);
+    verAngle += 0.1f * deltaTime * (oldMouseYpos - mouseYpos);
     verAngle = glm::clamp(verAngle, -1.5f, 1.5f);
     mouseMoved = false;
   }
