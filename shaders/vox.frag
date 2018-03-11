@@ -1,9 +1,10 @@
 #version 410 core
 
-flat in float texture_id;
+flat in uint texture_id;
 flat in vec3 frag_normal;
 flat in vec3 frag_tangent;
 flat in vec3 frag_bitangent;
+flat in uint frag_side;
 in vec3 frag_pos;
 
 out vec4 frag_color;
@@ -19,7 +20,7 @@ void main() {
                    dot(frag_bitangent, frag_pos));
   vec2 uv = fract(tileUV);
   vec3 ambient_color = vec4(texture(texture_array, vec3(uv, float(texture_id)))).rgb;
-  if (texture_id == 0.0f) {
+  if ((texture_id == 0 && frag_side == 5) || (texture_id == 52)) {
     vec3 biome_color = vec3(0.2, 0.5, 0.05);
     ambient_color = mix(ambient_color, biome_color, 0.5); 
   }
