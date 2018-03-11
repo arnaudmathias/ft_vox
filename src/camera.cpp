@@ -51,7 +51,7 @@ void Camera::rotate(float hor, float ver) {
   verAngle += ver;
 }
 
-void Camera::update(const Env &env) {
+void Camera::update(Env &env) {
   if (width != env.width || height != env.height) {
     proj = glm::perspective(
         glm::radians(80.0f),
@@ -98,7 +98,11 @@ void Camera::update(const Env &env) {
     }
     mouseXpos = env.inputHandler.mousex;
     mouseYpos = env.inputHandler.mousey;
-    this->mouseMoved = true;
+    if (env.has_resized) {
+      env.has_resized = false;
+    } else {
+      this->mouseMoved = true;
+    }
   }
   updateMatrix();
 }

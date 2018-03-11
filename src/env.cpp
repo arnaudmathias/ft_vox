@@ -26,6 +26,8 @@ Env::Env(unsigned short width, unsigned short height)
     glfwSetWindowMonitor(window, NULL, (mode->width / 2) - (_window_width / 2),
                          (mode->height / 2) - (_window_height / 2),
                          _window_width, _window_height, 0);
+    inputHandler.mousex = _window_width / 2;
+    inputHandler.mousey = _window_height / 2;
   }
   if (!window) {
     std::cout << "Could not create window\n";
@@ -56,6 +58,13 @@ void Env::toggleFullscreen() {
                          mode->height, mode->refreshRate);
     this->width = mode->width;
     this->height = mode->height;
+    // The mouse virtual position reported by curposPosCallback promptly jump
+    // after a window -> fullscreen transition
+    // Doesn't happen on fullscreen -> window
+    // GLFW bug ?
+    inputHandler.mousex -= (this->_window_width / 2);
+    inputHandler.mousey -= (this->_window_height / 2);
+    this->has_resized = true;
   } else {
     glfwSetWindowMonitor(window, NULL, (mode->width / 2) - (_window_width / 2),
                          (mode->height / 2) - (_window_height / 2),
@@ -88,7 +97,7 @@ void Env::setupWindow() {
 }
 
 void Env::setupContext() {
-  glfwSwapInterval(0);
+  glfwSwapInterval(1);
   glEnable(GL_DEBUG_OUTPUT);
   while (glGetError() != GL_NO_ERROR)
     ;  // Flush gl_error
