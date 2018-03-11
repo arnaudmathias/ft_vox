@@ -25,8 +25,8 @@ void Camera::updateMatrix() {
   deltaTime = static_cast<float>(currentTime - lastTime);
   lastTime = static_cast<float>(currentTime);
   if (mouseMoved) {
-    horAngle += 0.2f * deltaTime * (oldMouseXpos - mouseXpos);
-    verAngle += 0.2f * deltaTime * (oldMouseYpos - mouseYpos);
+    horAngle += 0.1f * deltaTime * (oldMouseXpos - mouseXpos);
+    verAngle += 0.1f * deltaTime * (oldMouseYpos - mouseYpos);
     verAngle = glm::clamp(verAngle, -1.5f, 1.5f);
     mouseMoved = false;
   }
@@ -51,7 +51,7 @@ void Camera::rotate(float hor, float ver) {
   verAngle += ver;
 }
 
-void Camera::update(const Env &env) {
+void Camera::update(Env &env) {
   if (width != env.width || height != env.height) {
     proj = glm::perspective(
         glm::radians(80.0f),
@@ -98,7 +98,11 @@ void Camera::update(const Env &env) {
     }
     mouseXpos = env.inputHandler.mousex;
     mouseYpos = env.inputHandler.mousey;
-    this->mouseMoved = true;
+    if (env.has_resized) {
+      env.has_resized = false;
+    } else {
+      this->mouseMoved = true;
+    }
   }
   updateMatrix();
 }

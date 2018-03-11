@@ -215,7 +215,7 @@ void generate_chunk(Block *data, Biome *biome_data, glm::vec3 pos) {
       float flat_base_value = perlin2D(glm::vec2(pos.x + x, pos.z + z), 5, 0.5f,
                                        2.0f, {0.01f, 0.01f});
       flat_base_value *= 0.125f;
-      flat_base_value += 0.5f;
+      flat_base_value += 0.4f;
       float terrain_value = perlin2D(glm::vec2(pos.x + x, pos.z + z), 4, 0.1f,
                                      0.5f, {0.005f, 0.005f});
 

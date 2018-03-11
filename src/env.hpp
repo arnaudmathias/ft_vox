@@ -33,6 +33,7 @@ class Env {
   float getFPS() const;
   int width;
   int height;
+  bool has_resized;
 
  private:
   void updateFpsCounter();
