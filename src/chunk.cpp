@@ -139,7 +139,9 @@ void ChunkManager::point_exploding(glm::ivec3 index, float intensity) {
     for (int y = index.y - intensity; y < index.y + intensity; y++) {
       for (int z = index.z - intensity; z < index.z + intensity; z++) {
         if (glm::distance(glm::vec3(x, y, z), glm::vec3(index)) < intensity)
-          set_block(Block(Material::Air), glm::ivec3(x, y, z));
+			if (rand() / static_cast<float>(RAND_MAX) * 0.3 + 0.7 > glm::distance(glm::vec3(x, y, z), glm::vec3(index)) / intensity) {
+          		set_block(Block(Material::Air), glm::ivec3(x, y, z));
+			}
       }
     }
   }
