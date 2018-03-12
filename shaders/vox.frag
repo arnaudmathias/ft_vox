@@ -20,6 +20,15 @@ void main() {
                    dot(frag_bitangent, frag_pos));
   vec2 uv = fract(tileUV);
   vec3 ambient_color = vec4(texture(texture_array, vec3(uv, float(texture_id)))).rgb;
+  if (texture_id == 640) {ambient_color = vec3(0.0, 0.0, 0.0);}
+  if (texture_id == 641) {ambient_color = vec3(0.0, 0.0, 0x99);}
+  if (texture_id == 642) {ambient_color = vec3(0.0, 0x99, 0.0);}
+  if (texture_id == 643) {ambient_color = vec3(0.0, 0x99, 0x99);}
+  if (texture_id == 644) {ambient_color = vec3(0x99, 0.0, 0.0);}
+  if (texture_id == 645) {ambient_color = vec3(0x99, 0.0, 0x99);}
+  if (texture_id == 646) {ambient_color = vec3(0x99, 0x99, 0.0);}
+  if (texture_id == 647) {ambient_color = vec3(1.0, 0.0, 0.0);}
+
   if ((texture_id == 0 && frag_side == 5) || (texture_id == 52)) {
     vec3 biome_color = vec3(0.2, 0.5, 0.05);
     ambient_color = mix(ambient_color, biome_color, 0.5); 

@@ -69,6 +69,10 @@ void Game::update(Env& env) {
     env.inputHandler.keys[GLFW_KEY_I] = false;
     _debugMode = !_debugMode;
   }
+	if (env.inputHandler.keys[GLFW_KEY_P]) {
+    env.inputHandler.keys[GLFW_KEY_P] = false;
+    _chunkManager.Draw_earth();
+  }
   if (env.inputHandler.keys[GLFW_KEY_LEFT_BRACKET]) {
     env.inputHandler.keys[GLFW_KEY_LEFT_BRACKET] = false;
     _chunkManager.decreaseRenderDistance();
