@@ -18,5 +18,7 @@ class Game {
   ChunkManager _chunkManager;
   bool _debugMode;
   Camera* _camera;
+  RenderAttrib faceRenderAttrib;
+  struct HitInfo _last_hit;
   void print_debug_info(const Env& env, Renderer& renderer, Camera& camera);
 };

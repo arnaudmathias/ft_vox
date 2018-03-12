@@ -7,6 +7,7 @@
 struct VAO {
   VAO(const std::vector<Vertex>& vertices);
   VAO(const std::vector<glm::vec3>& positions);
+  VAO(const std::vector<glm::vec4>& positions);
   ~VAO();
   void update(const std::vector<glm::vec3>& positions);
   void update(const std::vector<Vertex>& vertices);

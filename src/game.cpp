@@ -5,6 +5,7 @@ Game::Game(void) : Game(42) {}
 Game::Game(uint32_t seed) : _chunkManager(seed) {
   _camera =
       new Camera(glm::vec3(0.0f, 125.0f, 1.0f), glm::vec3(0.0f, 125.0f, 0.0f));
+  faceRenderAttrib.vaos.push_back(new VAO({{0.0f, 0.0f, 0.0f}}));
 }
 
 Game::Game(Game const& src) { *this = src; }
@@ -19,22 +20,22 @@ Game& Game::operator=(Game const& rhs) {
   }
   return (*this);
 }
+
 void Game::update(Env& env) {
   _camera->update(env);
   _chunkManager.update(_camera->pos);
+  struct HitInfo hit_cube =
+      _chunkManager.rayCast(_camera->dir, _camera->pos, 5.0f);
+  _last_hit = hit_cube;
   if (env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_LEFT]) {
     env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_LEFT] = false;
-    struct HitInfo rm_cube =
-	_chunkManager.rayCast(_camera->dir, _camera->pos, 5.0f);
-    _chunkManager.set_block(Block(Material::Air), rm_cube.pos);
+    _chunkManager.set_block(Block(Material::Air), hit_cube.pos);
   }
   if (env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_RIGHT]) {
     env.inputHandler.mouse_keys[GLFW_MOUSE_BUTTON_RIGHT] = false;
-    struct HitInfo add_cube =
-	_chunkManager.rayCast(_camera->dir, _camera->pos, 5.0f);
-    if (add_cube.hit) {
-      _chunkManager.add_block(add_cube.pos +
-			      glm::ivec3(mesher::get_normal(add_cube.side)));
+    if (hit_cube.hit) {
+      _chunkManager.add_block(hit_cube.pos +
+			      glm::ivec3(mesher::get_normal(hit_cube.side)));
     }
   }
   if (env.inputHandler.keys[GLFW_KEY_KP_0]) {
@@ -90,8 +91,14 @@ void Game::render(const Env& env, Renderer& renderer) {
   renderer.uniforms.proj = _camera->proj;
   renderer.uniforms.view_proj = _camera->proj * _camera->view;
   _chunkManager.setRenderAttributes(renderer, _camera->pos);
+  renderer.addRenderAttrib(faceRenderAttrib);
   renderer.draw();
   renderer.flush();
+  if (_last_hit.hit) {
+    renderer.renderbillboard(
+	mesher::getFace(glm::ivec3(_last_hit.pos), _last_hit.side),
+	_last_hit.model, renderer.uniforms.view_proj);
+  }
   if (_debugMode) {
     print_debug_info(env, renderer, *_camera);
     _chunkManager.print_chunkmanager_info(renderer, fheight, fwidth);
@@ -106,6 +113,33 @@ std::string float_to_string(float f, int prec) {
   return out.str();
 }
 
+std::string to_string(enum BlockSide side) {
+  std::string res;
+  switch (side) {
+    case BlockSide::Front:
+      res = "Front";
+      break;
+    case BlockSide::Back:
+      res = "Back";
+      break;
+    case BlockSide::Left:
+      res = "Left";
+      break;
+    case BlockSide::Right:
+      res = "Right";
+      break;
+    case BlockSide::Bottom:
+      res = "Bottom";
+      break;
+    case BlockSide::Up:
+      res = "Up";
+      break;
+    default:
+      break;
+  }
+  return (res);
+}
+
 void Game::print_debug_info(const Env& env, Renderer& renderer,
 			    Camera& camera) {
   float fheight = static_cast<float>(renderer.getScreenHeight());
@@ -116,7 +150,12 @@ void Game::print_debug_info(const Env& env, Renderer& renderer,
 			  " z: " + float_to_string(camera.pos.z, 2),
 		      glm::vec3(1.0f, 1.0f, 1.0f));
   renderer.renderText(10.0f, fheight - 50.0f, 0.35f,
-		      "vel: " + float_to_string(camera.velocity, 2) + " m/s",
+		      "vel: " + float_to_string(camera.velocity, 2) + " m/s " +
+			  "HitInfo " + std::to_string(_last_hit.hit) + " (" +
+			  float_to_string(_last_hit.pos.x, 1) + ", " +
+			  float_to_string(_last_hit.pos.y, 1) + ", " +
+			  float_to_string(_last_hit.pos.z, 1) + ") " +
+			  to_string(_last_hit.side),
 		      glm::vec3(1.0f, 1.0f, 1.0f));
   renderer.renderText(fwidth - 130.0f, fheight - 25.0f, 0.35f,
 		      float_to_string(env.getFPS(), 2) + " fps",

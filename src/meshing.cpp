@@ -3,12 +3,12 @@
 namespace mesher {
 
 const std::vector<glm::vec3> cube_front = {
-    {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f},
-    {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}};
-
-const std::vector<glm::vec3> cube_back = {
     {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 1.0f},
     {1.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 1.0f}};
+
+const std::vector<glm::vec3> cube_back = {
+    {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f},
+    {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}};
 
 const std::vector<glm::vec3> cube_left = {
     {1.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.0f},
@@ -72,6 +72,42 @@ glm::vec3 get_normal(enum BlockSide side) {
       break;
   }
   return tmp;
+}
+
+const std::vector<glm::vec3> getFace(glm::ivec3 pos, enum BlockSide side) {
+  glm::ivec2 chunk_pos =
+      glm::ivec2((pos.x >> 4) * CHUNK_SIZE, (pos.z >> 4) * CHUNK_SIZE);
+  pos.x = pos.x - chunk_pos.x;
+  pos.z = pos.z - chunk_pos.y;
+  std::vector<glm::vec3> positions;
+  switch (side) {
+    case BlockSide::Front:
+      positions.insert(positions.begin(), cube_front.begin(), cube_front.end());
+      break;
+    case BlockSide::Back:
+      positions.insert(positions.begin(), cube_back.begin(), cube_back.end());
+      break;
+    case BlockSide::Left:
+      positions.insert(positions.begin(), cube_left.begin(), cube_left.end());
+      break;
+    case BlockSide::Right:
+      positions.insert(positions.begin(), cube_right.begin(), cube_right.end());
+      break;
+    case BlockSide::Bottom:
+      positions.insert(positions.begin(), cube_bottom.begin(),
+                       cube_bottom.end());
+      break;
+    case BlockSide::Up:
+      positions.insert(positions.begin(), cube_up.begin(), cube_up.end());
+      break;
+    default:
+      break;
+  }
+  glm::vec3 normal = get_normal(side);
+  for (auto &vertex_position : positions) {
+    vertex_position = (vertex_position + glm::vec3(pos)) + normal * 0.001f;
+  }
+  return (positions);
 }
 
 const std::vector<Vertex> getFace(Chunk *chunk, const Block &block,

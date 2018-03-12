@@ -52,6 +52,7 @@ class Chunk {
   bool generated;  // Needed on unload to avoid writing empty chunk to disk
   void forceFullRemesh();
   void setDirty(int model_id);
+  glm::mat4 get_model_matrix();
 
  private:
   Chunk(void);
@@ -86,6 +87,7 @@ class ChunkManager {
 
  private:
   inline Block get_block(glm::ivec3 index);
+  glm::mat4 get_model_matrix(glm::ivec3 index);
   void addRegionToQueue(glm::ivec2 chunk_pos);
   void loadRegion(glm::ivec2 region_pos);
   void unloadRegion(glm::ivec2 region_pos);

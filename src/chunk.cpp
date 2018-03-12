@@ -103,6 +103,8 @@ inline Block Chunk::get_block(glm::ivec3 index) {
 			index.z]);
 }
 
+glm::mat4 Chunk::get_model_matrix() { return (this->_renderAttrib.model); }
+
 inline Biome Chunk::get_biome(glm::ivec3 index) {
 	if (index.x < 0 || index.x >= CHUNK_SIZE || index.z < 0 ||
 			index.z >= CHUNK_SIZE) {
@@ -144,19 +146,19 @@ void ChunkManager::add_block(glm::ivec3 index) {
 }
 
 void ChunkManager::point_exploding(glm::ivec3 index, float intensity) {
-	float random;
-	srand(time(nullptr));
-	for (int x = index.x - intensity; x < index.x + intensity; x++) {
-		for (int y = index.y - intensity; y < index.y + intensity; y++) {
-			for (int z = index.z - intensity; z < index.z + intensity; z++) {
-				if (glm::distance(glm::vec3(x, y, z), glm::vec3(index)) < intensity)
-					if (rand() / static_cast<float>(RAND_MAX) * 0.3 + 0.7 > glm::distance(glm::vec3(x, y, z), glm::vec3(index)) / intensity) {
-						set_block(Block(Material::Air), glm::ivec3(x, y, z));
-					}
-			}
-		}
-	}
-	// forceFullRemesh();
+  float random;
+  srand(time(nullptr));
+  for (int x = index.x - intensity; x < index.x + intensity; x++) {
+    for (int y = index.y - intensity; y < index.y + intensity; y++) {
+      for (int z = index.z - intensity; z < index.z + intensity; z++) {
+        if (glm::distance(glm::vec3(x, y, z), glm::vec3(index)) < intensity)
+          if (rand() / static_cast<float>(RAND_MAX) * 0.3 + 0.7 >
+              glm::distance(glm::vec3(x, y, z), glm::vec3(index)) / intensity) {
+            set_block(Block(Material::Air), glm::ivec3(x, y, z));
+          }
+      }
+    }
+  }
 }
 
 void Chunk::setDirty(int model_id) { dirty[model_id] = true; }
@@ -528,6 +530,20 @@ inline Block ChunkManager::get_block(glm::ivec3 index) {
 	Block block = {};
 	return (block);
 }
+inline glm::mat4 ChunkManager::get_model_matrix(glm::ivec3 index) {
+  glm::ivec2 chunk_pos =
+      glm::ivec2((index.x >> 4) * CHUNK_SIZE, (index.z >> 4) * CHUNK_SIZE);
+  auto chunk_it = _chunks.find(chunk_pos);
+  if (chunk_it != _chunks.end()) {
+    glm::ivec3 block_pos;
+    block_pos.x = index.x - chunk_pos.x;
+    block_pos.y = index.y;
+    block_pos.z = index.z - chunk_pos.y;
+    return (chunk_it->second.get_model_matrix());
+  }
+  glm::mat4 m(1.0f);
+  return (m);
+}
 
 void ChunkManager::set_block(Block block, glm::ivec3 index) {
 	glm::ivec2 chunk_pos =
@@ -559,114 +575,69 @@ inline float intbound(float pos, float ds) {
 	return (ds > 0.0f ? ceil(pos) - pos : pos - floor(pos)) / fabs(ds);
 }
 
-/*
-   void ChunkManager::rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos,
-   float max_dist) {
-// http://www.cse.chalmers.se/edu/year/2011/course/TDA361/grid.pdf
-glm::ivec3 pos = glm::floor(ray_pos);
-glm::ivec3 step;
-step.x = ray_dir.x < 0.0f ? -1 : 1;
-step.y = ray_dir.y < 0.0f ? -1 : 1;
-step.z = ray_dir.z < 0.0f ? -1 : 1;
-glm::vec3 tMax;
-glm::vec3 delta = glm::vec3(step) / ray_dir;
-tMax.x = intbound(ray_pos.x, ray_dir.x);
-tMax.y = intbound(ray_pos.y, ray_dir.y);
-tMax.z = intbound(ray_pos.z, ray_dir.z);
-Block block = {};
-while (1) {
-if (pos.y > 255 || pos.y < 0) {
-break;
-}
-if (block.material != Material::Air) {
-break;
-}
-if (tMax.x < tMax.y) {
-if (tMax.x < tMax.z) {
-if (tMax.x > max_dist) break;
-pos.x += step.x;
-tMax.x += delta.x;
-} else {
-if (tMax.z > max_dist) break;
-pos.z += step.z;
-tMax.z += delta.z;
-}
-} else {
-if (tMax.y < tMax.z) {
-if (tMax.y > max_dist) break;
-pos.y += step.y;
-tMax.y += delta.y;
-} else {
-if (tMax.z > max_dist) break;
-pos.z += step.z;
-tMax.z += delta.z;
-}
-}
-block = get_block(pos);
-}
-if (block.material != Material::Air) {
-Block air = {};
-set_block(air, pos);
-}
-}
-*/
 struct HitInfo ChunkManager::rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos,
-		float max_dist) {
-	// http://www.cse.chalmers.se/edu/year/2011/course/TDA361/grid.pdf
-	glm::ivec3 pos = glm::floor(ray_pos);
-	struct HitInfo info = {};
-	bool sign;
-	std::string last_step = "none";
-	glm::ivec3 step;
-	step.x = ray_dir.x < 0.0f ? -1 : 1;
-	step.y = ray_dir.y < 0.0f ? -1 : 1;
-	step.z = ray_dir.z < 0.0f ? -1 : 1;
-	glm::vec3 tMax;
-	glm::vec3 delta = glm::vec3(step) / ray_dir;
-	tMax.x = intbound(ray_pos.x, ray_dir.x);
-	tMax.y = intbound(ray_pos.y, ray_dir.y);
-	tMax.z = intbound(ray_pos.z, ray_dir.z);
-	Block block(Material::Air);
-	info.hit = 0;
-	while (1) {
-		if (pos.y > 255 || pos.y < 0) {
-			info.hit = 0;
-			break;
-		}
-		if (block.material != Material::Air) {
-			info.hit = 1;
-			break;
-		}
-		if (tMax.x < tMax.y) {
-			if (tMax.x < tMax.z) {
-				if (tMax.x > max_dist) break;
-				pos.x += step.x;
-				last_step = "x";
-				tMax.x += delta.x;
-			} else {
-				if (tMax.z > max_dist) break;
-				pos.z += step.z;
-				last_step = "z";
-				tMax.z += delta.z;
-			}
-		} else {
-			if (tMax.y < tMax.z) {
-				if (tMax.y > max_dist) break;
-				pos.y += step.y;
-				tMax.y += delta.y;
-				last_step = "y";
-			} else {
-				if (tMax.z > max_dist) break;
-				last_step = "z";
-				pos.z += step.z;
-				tMax.z += delta.z;
-			}
-		}
-		block = get_block(pos);
-	}
-	info.side = get_face(last_step, step);
-	info.pos = pos;
-	return info;
+                                     float max_dist) {
+  // http://www.cse.chalmers.se/edu/year/2011/course/TDA361/grid.pdf
+  glm::ivec3 pos = glm::floor(ray_pos);
+  struct HitInfo info = {};
+  bool sign;
+  std::string last_step = "none";
+  glm::ivec3 step;
+  step.x = ray_dir.x < 0.0f ? -1 : 1;
+  step.y = ray_dir.y < 0.0f ? -1 : 1;
+  step.z = ray_dir.z < 0.0f ? -1 : 1;
+  glm::vec3 tMax;
+  glm::vec3 delta = glm::vec3(step) / ray_dir;
+  tMax.x = intbound(ray_pos.x, ray_dir.x);
+  tMax.y = intbound(ray_pos.y, ray_dir.y);
+  tMax.z = intbound(ray_pos.z, ray_dir.z);
+  Block block(Material::Air);
+  info.hit = 0;
+  while (1) {
+    if (pos.y > 255 || pos.y < 0) {
+      info.hit = false;
+      break;
+    }
+    if (block.material != Material::Air) {
+      info.hit = true;
+      break;
+    }
+    if (tMax.x < tMax.y) {
+      if (tMax.x < tMax.z) {
+        if (tMax.x > max_dist) break;
+        pos.x += step.x;
+        info.pos = pos;
+        last_step = "x";
+        tMax.x += delta.x;
+      } else {
+        if (tMax.z > max_dist) break;
+        pos.z += step.z;
+        info.pos = pos;
+        last_step = "z";
+        tMax.z += delta.z;
+      }
+    } else {
+      if (tMax.y < tMax.z) {
+        if (tMax.y > max_dist) break;
+        pos.y += step.y;
+        info.pos = pos;
+        tMax.y += delta.y;
+        last_step = "y";
+      } else {
+        if (tMax.z > max_dist) break;
+        last_step = "z";
+        pos.z += step.z;
+        info.pos = pos;
+        tMax.z += delta.z;
+      }
+    }
+    block = get_block(pos);
+  }
+  if (info.hit) {
+    info.side = get_face(last_step, step);
+    info.model = get_model_matrix(pos);
+  }
+  return info;
 }
 
 void ChunkManager::setRenderDistance(unsigned char rd) {

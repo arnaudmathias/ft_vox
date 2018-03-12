@@ -22,6 +22,7 @@ struct HitInfo {
   bool hit;
   enum BlockSide side;
   glm::ivec3 pos;
+  glm::mat4 model;
 };
 
 enum class Biome : unsigned char {
