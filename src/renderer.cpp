@@ -16,6 +16,11 @@ std::vector<glm::vec3> skyboxVertices = {
     {-1.0f, -1.0f, -1.0f}, {-1.0f, -1.0f, 1.0f},  {1.0f, -1.0f, -1.0f},
     {1.0f, -1.0f, -1.0f},  {-1.0f, -1.0f, 1.0f},  {1.0f, -1.0f, 1.0f}};
 
+std::vector<glm::vec4> billboardVertices = {  // xy=pos, zw = uv
+    {-1.0f, 1.0f, 0.0f, 1.0f},  {1.0f, 1.0f, 1.0f, 1.0f},
+    {1.0f, -1.0f, 1.0f, 0.0f},  {1.0f, -1.0f, 1.0f, 0.0f},
+    {-1.0f, -1.0f, 0.0f, 0.0f}, {-1.0f, 1.0f, 0.0f, 1.0f}};
+
 Renderer::Renderer(void) : Renderer(0, 0) {}
 
 Renderer::Renderer(int width, int height)
@@ -27,6 +32,8 @@ Renderer::Renderer(int width, int height)
       _cubeMapShader(nullptr),
       _polygonMode(PolygonMode::Fill) {
   _shader = new Shader("shaders/vox.vert", "shaders/vox.frag");
+  _billboardShader =
+      new Shader("shaders/billboard.vert", "shaders/billboard.frag");
   try {
     _textureAtlas = new Texture("textures/terrain.png", 16, 16);
   } catch (std::runtime_error &e) {
@@ -69,6 +76,22 @@ void Renderer::renderUI(std::string filename, float pos_x, float pos_y,
                                     0.0f, static_cast<float>(this->_height));
   _uiRenderer.renderUI(filename, pos_x, pos_y, scale, projection, centered);
   switchPolygonMode(backup_mode);
+}
+
+void Renderer::renderbillboard(const std::vector<glm::vec3> vertices,
+                               glm::mat4 model, glm::mat4 view_proj) {
+  VAO vao(vertices);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glUseProgram(_billboardShader->id);
+  glm::mat4 mvp = view_proj * model;
+  glUniformMatrix4fv(glGetUniformLocation(_billboardShader->id, "MVP"), 1,
+                     GL_FALSE, glm::value_ptr(mvp));
+  glBindVertexArray(vao.vao);
+  glDrawArrays(GL_TRIANGLES, 0, vao.vertices_size);
+
+  glBindVertexArray(0);
+  glDisable(GL_BLEND);
 }
 
 void Renderer::addRenderAttrib(const RenderAttrib &renderAttrib) {

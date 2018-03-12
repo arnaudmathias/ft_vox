@@ -76,6 +76,8 @@ class Renderer {
                   glm::vec3 color);
   void renderUI(std::string filename, float pos_x, float pos_y, float scale,
                 bool centered);
+  void renderbillboard(const std::vector<glm::vec3> vertices, glm::mat4 model,
+                       glm::mat4 view_proj);
   void update(const Env& env);
   void draw();
   void flush();
@@ -96,6 +98,7 @@ class Renderer {
   VAO* _cubeMapVao;
   Shader* _cubeMapShader;
   Shader* _shader;
+  Shader* _billboardShader;
   enum PolygonMode _polygonMode;
   TextRenderer _textRenderer;
   UiRenderer _uiRenderer;

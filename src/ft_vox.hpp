@@ -15,12 +15,21 @@
 
 enum class BlockSide : unsigned int { Front, Back, Left, Right, Bottom, Up };
 
-enum class Material : unsigned char { Air, Stone, Dirt, Sand, Bedrock, Wood, Leaf};
+enum class Material : unsigned char {
+  Air,
+  Stone,
+  Dirt,
+  Sand,
+  Bedrock,
+  Wood,
+  Leaf
+};
 
 struct HitInfo {
   bool hit;
   enum BlockSide side;
   glm::ivec3 pos;
+  glm::mat4 model;
 };
 
 enum class Biome : unsigned char {

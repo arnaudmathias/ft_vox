@@ -14,5 +14,7 @@ void get_aabb(Block *data, glm::vec3 &aabb_center, glm::vec3 &aabb_halfsize,
 glm::ivec3 get_interval(Block *data, glm::ivec3 pos, Block current_block);
 void set_block(Block *data, Block block, glm::ivec3 index);
 Block get_block(Block *data, glm::ivec3 index);
-	glm::vec3 get_normal(enum BlockSide side);
+glm::vec3 get_normal(enum BlockSide side);
+glm::vec3 get_euler_rotation(enum BlockSide side);
+const std::vector<glm::vec3> getFace(glm::ivec3, enum BlockSide side);
 }  // namespace mesher
