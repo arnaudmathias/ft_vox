@@ -23,6 +23,9 @@ Game& Game::operator=(Game const& rhs) {
 
 void Game::update(Env& env) {
   _camera->update(env);
+  static float rotx = 0.0;
+  static float roty = 0.0;
+  static float rotz = 0.0;
   _chunkManager.update(_camera->pos);
   struct HitInfo hit_cube =
       _chunkManager.rayCast(_camera->dir, _camera->pos, 5.0f);
@@ -70,9 +73,20 @@ void Game::update(Env& env) {
     env.inputHandler.keys[GLFW_KEY_I] = false;
     _debugMode = !_debugMode;
   }
-	if (env.inputHandler.keys[GLFW_KEY_P]) {
-    env.inputHandler.keys[GLFW_KEY_P] = false;
-    _chunkManager.Draw_earth();
+	if (env.inputHandler.keys[GLFW_KEY_KP_7]) {
+    env.inputHandler.keys[GLFW_KEY_KP_7] = false;
+	rotx += 0.05;
+    _chunkManager.Draw_earth({50.0, 150.0, 50}, 50, {rotx, roty, rotz});
+  }
+	if (env.inputHandler.keys[GLFW_KEY_KP_8]) {
+    env.inputHandler.keys[GLFW_KEY_KP_9] = false;
+	roty += 0.05;
+    _chunkManager.Draw_earth({50.0, 150.0, 50}, 50, {rotx, roty, rotz});
+  }
+	if (env.inputHandler.keys[GLFW_KEY_KP_9]) {
+    env.inputHandler.keys[GLFW_KEY_KP_9] = false;
+	rotz += 0.05;
+    _chunkManager.Draw_earth({50.0, 150.0, 50}, 50, {rotx, roty, rotz});
   }
   if (env.inputHandler.keys[GLFW_KEY_LEFT_BRACKET]) {
     env.inputHandler.keys[GLFW_KEY_LEFT_BRACKET] = false;

@@ -82,7 +82,7 @@ class ChunkManager {
   void reloadMesh();
   void set_block(Block block, glm::ivec3 index);
   void point_exploding(glm::ivec3 index, float intensity);
-  void Draw_earth();
+  void Draw_earth(glm::vec3 pos, int size, glm::vec3 rot);
   void add_block(glm::ivec3 index);
 
  private:

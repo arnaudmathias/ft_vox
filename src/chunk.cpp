@@ -289,44 +289,42 @@ Color get_best_color(glm::vec3 earth_color) {
 
   int best = 1;
   float best_dist = 999999;
-  // std::cout << earth_color.x << "|" << earth_color.y << "|"<< earth_color.z
-  // << std::endl;
-  float hEarth = glm::hsvColor(earth_color).x;
+  float moyearth = ( earth_color.x + earth_color.y + earth_color.z) / 3;
   for (int i = 0; i < 8; i++) {
-    if (glm::abs(hEarth - glm::hsvColor(color[i]).x) < best_dist) {
-      best_dist = glm::abs(hEarth - glm::hsvColor(color[i]).x);
+    if (glm::abs(moyearth - ((color[i].x + color[i].y + color[i].z) / 3))< best_dist) {
+      best_dist = glm::abs(moyearth - ((color[i].x + color[i].y + color[i].z) / 3));
       best = i;
     }
   }
   return static_cast<Color>(best);
 }
 
-void ChunkManager::Draw_earth() {
-  int size = 100;
+void ChunkManager::Draw_earth(glm::vec3 pos, int size, glm::vec3 rot) {
   int w, h;
   int texChannels = 0;
+  stbi_set_flip_vertically_on_load(1);
   stbi_uc* pixels =
       stbi_load("./textures/earth.jpg", &w, &h, &texChannels, STBI_rgb_alpha);
-  for (int x = -size; x < size; x++) {
-    for (int y = -size; y < size; y++) {
-      for (int z = -size; z < size; z++) {
-	glm::vec3 normal(x + 0.5, y + 0.5, z + 0.5);
+  if(!pixels)
+	  return;
+  for (int x = -size + pos.x; x < size + pos.x; x++) {
+    for (int y = -size + pos.y; y < size + pos.y; y++) {
+      for (int z = -size +pos.z; z < size + pos.z; z++) {
+	glm::vec3 normal(x - pos.x + 0.5, y - pos.y + 0.5, z + 0.5 - pos.z);
 	normal = glm::normalize(normal);
+	glm::mat4 transformm = glm::eulerAngleYXZ(rot.y, rot.x, rot.z);
+	normal = transformm * glm::vec4(normal, 1.0);
 	float uu = atan2(normal.z, normal.x);
 	float vv = asin(normal.y);
-
-	// int u = mapp(uu, -M_PI, M_PI, 0, w);
 	int u = mapp(uu, 0, w, -M_PI, M_PI);
-	// int v = mapp(vv, -(M_PI / 2.0), M_PI / 2.0, 0, h);
 	int v = mapp(vv, 0, h, -(M_PI / 2.0), M_PI / 2.0);
-
 	glm::vec3 color(pixels[(v * w + u) * 4], pixels[(v * w + u + 1) * 4],
 			pixels[(v * w + u + 2) * 4]);
 	int idmax = 0;
 	float mindist = 9999;
 	int arr[5] = {130, 162, 194, 178, 178};
-	if (glm::distance(glm::vec3(x, y, z), glm::vec3(0.0)) < size / 2 &&
-	    glm::distance(glm::vec3(x, y, z), glm::vec3(0.0)) > size / 2 - 1) {
+	if (glm::distance(glm::vec3(x, y, z), pos) < size &&
+	    glm::distance(glm::vec3(x, y, z), pos) > size  - 1) {
 	  Block block(Material::Grey);
 	  Color c = get_best_color(color);
 	  block.material = get_material_color(c);
