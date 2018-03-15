@@ -61,14 +61,6 @@ void Game::update(Env& env) {
       _chunkManager.point_exploding(add_cube.pos, 10.f);
     }
   }
-  if (env.inputHandler.keys[GLFW_KEY_C]) {
-    env.inputHandler.keys[GLFW_KEY_C] = false;
-    _chunkManager.setMeshingType(MeshingType::Culling);
-  }
-  if (env.inputHandler.keys[GLFW_KEY_G]) {
-    env.inputHandler.keys[GLFW_KEY_G] = false;
-    _chunkManager.setMeshingType(MeshingType::Greedy);
-  }
   if (env.inputHandler.keys[GLFW_KEY_I]) {
     env.inputHandler.keys[GLFW_KEY_I] = false;
     _debugMode = !_debugMode;

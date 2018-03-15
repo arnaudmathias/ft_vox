@@ -38,7 +38,7 @@ void Camera::updateMatrix() {
   right = glm::normalize(right);
   up = glm::normalize(glm::cross(right, dir));
   view = glm::lookAt(pos, dir + pos, up);
-  if (static_cast<float>(currentTime - lastVelocity) > 1.0f) {
+  if (static_cast<float>(currentTime) - lastVelocity > 1.0f) {
     velocity = glm::distance(lastPos, pos) /
                (static_cast<float>(currentTime) - lastVelocity);
     lastVelocity = static_cast<float>(currentTime);

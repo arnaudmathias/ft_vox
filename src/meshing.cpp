@@ -293,7 +293,7 @@ void culling(Chunk *chunk, RenderAttrib &render_attrib) {
             Block b = front_block.material != Material::Air ? front_block
                                                             : current_block;
             auto quad =
-                getFace(chunk, b, {x, y, z}, BlockSide::Front, glm::vec3(1.0f));
+                getFace(chunk, b, {x, y, z - 1}, BlockSide::Front, glm::vec3(1.0f));
             vertices.insert(vertices.end(), quad.begin(), quad.end());
             current_block = front_block;
           }

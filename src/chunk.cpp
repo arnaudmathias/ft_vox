@@ -2,9 +2,9 @@
 #include <stb_image.h>
 
 float mapp(float unscaledNum, float minAllowed, float maxAllowed, float min,
-	   float max) {
+           float max) {
   return (maxAllowed - minAllowed) * (unscaledNum - min) / (max - min) +
-	 minAllowed;
+         minAllowed;
 }
 enum Color {
   BLACK = 0,
@@ -64,21 +64,12 @@ void Chunk::generate() {
   }
 }
 
-void Chunk::mesh(enum MeshingType meshing_type) {
+void Chunk::mesh() {
   if (is_dirty()) {
     if (_renderAttrib.vaos.size() != CHUNK_HEIGHT / MODEL_HEIGHT) {
       _renderAttrib.vaos.resize(CHUNK_HEIGHT / MODEL_HEIGHT);
     }
-    switch (meshing_type) {
-      case MeshingType::Culling:
-	mesher::culling(this, _renderAttrib);
-	break;
-      case MeshingType::Greedy:
-	mesher::greedy(this, _renderAttrib);
-	break;
-      default:
-	break;
-    }
+    mesher::greedy(this, _renderAttrib);
     mesher::get_aabb(data, aabb_center, aabb_halfsize, _pos);
   }
 };
@@ -111,7 +102,7 @@ inline Block Chunk::get_block(glm::ivec3 index) {
     return (block);
   }
   return (this->data[index.y * CHUNK_SIZE * CHUNK_SIZE + index.x * CHUNK_SIZE +
-		     index.z]);
+                     index.z]);
 }
 
 glm::mat4 Chunk::get_model_matrix() { return (this->_renderAttrib.model); }
@@ -131,7 +122,7 @@ inline void Chunk::set_block(Block block, glm::ivec3 index) {
     return;
   }
   this->data[index.y * CHUNK_SIZE * CHUNK_SIZE + index.x * CHUNK_SIZE +
-	     index.z] = block;
+             index.z] = block;
   this->dirty[index.y / MODEL_HEIGHT] = true;
 }
 
@@ -162,11 +153,11 @@ void ChunkManager::point_exploding(glm::ivec3 index, float intensity) {
   for (int x = index.x - intensity; x < index.x + intensity; x++) {
     for (int y = index.y - intensity; y < index.y + intensity; y++) {
       for (int z = index.z - intensity; z < index.z + intensity; z++) {
-	if (glm::distance(glm::vec3(x, y, z), glm::vec3(index)) < intensity)
-	  if (rand() / static_cast<float>(RAND_MAX) * 0.3 + 0.7 >
-	      glm::distance(glm::vec3(x, y, z), glm::vec3(index)) / intensity) {
-	    set_block(Block(Material::Air), glm::ivec3(x, y, z));
-	  }
+        if (glm::distance(glm::vec3(x, y, z), glm::vec3(index)) < intensity)
+          if (rand() / static_cast<float>(RAND_MAX) * 0.3 + 0.7 >
+              glm::distance(glm::vec3(x, y, z), glm::vec3(index)) / intensity) {
+            set_block(Block(Material::Air), glm::ivec3(x, y, z));
+          }
       }
     }
   }
@@ -176,8 +167,7 @@ void Chunk::setDirty(int model_id) { dirty[model_id] = true; }
 
 ChunkManager::ChunkManager(void) : ChunkManager(42) {}
 
-ChunkManager::ChunkManager(uint32_t seed)
-    : _renderDistance(10), _seed(seed), _meshing_type(MeshingType::Greedy) {
+ChunkManager::ChunkManager(uint32_t seed) : _renderDistance(10), _seed(seed) {
   generator::init(10000, _seed);
   if (io::exists("world") == false) {
     io::makedir("world");
@@ -195,7 +185,7 @@ ChunkManager::~ChunkManager(void) {
   while (chunk_it != _chunks.end()) {
     glm::ivec2 chunk_pos(chunk_it->first);
     glm::ivec2 region_pos((chunk_pos.x >> 8) * (REGION_SIZE * CHUNK_SIZE),
-			  (chunk_pos.y >> 8) * (REGION_SIZE * CHUNK_SIZE));
+                          (chunk_pos.y >> 8) * (REGION_SIZE * CHUNK_SIZE));
     regions.insert(region_pos);
     chunk_it++;
   }
@@ -207,13 +197,12 @@ ChunkManager::~ChunkManager(void) {
 ChunkManager& ChunkManager::operator=(ChunkManager const& rhs) {
   if (this != &rhs) {
     this->_renderDistance = rhs._renderDistance;
-    this->_meshing_type = rhs._meshing_type;
   }
   return (*this);
 }
 
 inline unsigned int getNearestIdx(glm::vec2 position,
-				  const std::deque<glm::ivec2>& positions) {
+                                  const std::deque<glm::ivec2>& positions) {
   unsigned int nearest = 0;
   float min_dist = 99999.0f;
   for (unsigned int i = 0; i < positions.size(); i++) {
@@ -233,7 +222,7 @@ void ChunkManager::update(const glm::vec3& player_pos) {
     auto nearest_chunk_it = _chunks.find(to_update.front());
     // auto nearest_chunk_it = _chunks.find(to_update[nearest_idx]);
     if (nearest_chunk_it != _chunks.end()) {
-      nearest_chunk_it->second.mesh(this->_meshing_type);
+      nearest_chunk_it->second.mesh();
       to_mesh.push_back(nearest_chunk_it->first);
     }
     to_update.pop_front();
@@ -242,7 +231,7 @@ void ChunkManager::update(const glm::vec3& player_pos) {
   // Find nearest chunk and gen it
   if (to_generate.size() > 0) {
     unsigned int nearest_idx =
-	getNearestIdx(glm::vec2(player_pos.x, player_pos.z), to_generate);
+        getNearestIdx(glm::vec2(player_pos.x, player_pos.z), to_generate);
     auto nearest_chunk_it = _chunks.find(to_generate[nearest_idx]);
     if (nearest_chunk_it != _chunks.end()) {
       nearest_chunk_it->second.generate();
@@ -253,23 +242,23 @@ void ChunkManager::update(const glm::vec3& player_pos) {
   // Find nearest chunk and mesh it
   if (to_mesh.size() > 0) {
     unsigned int nearest_idx =
-	getNearestIdx(glm::vec2(player_pos.x, player_pos.z), to_mesh);
+        getNearestIdx(glm::vec2(player_pos.x, player_pos.z), to_mesh);
     auto nearest_chunk_it = _chunks.find(to_mesh[nearest_idx]);
     if (nearest_chunk_it != _chunks.end()) {
-      nearest_chunk_it->second.mesh(this->_meshing_type);
+      nearest_chunk_it->second.mesh();
     }
     to_mesh.erase(to_mesh.begin() + nearest_idx);
   }
   // Add regions within renderDistance
   glm::ivec2 player_chunk_pos =
       glm::ivec2((static_cast<int>(player_pos.x) >> 4) * CHUNK_SIZE,
-		 (static_cast<int>(player_pos.z) >> 4) * CHUNK_SIZE);
+                 (static_cast<int>(player_pos.z) >> 4) * CHUNK_SIZE);
   for (int x = -this->_renderDistance; x <= this->_renderDistance; x++) {
     for (int z = -this->_renderDistance; z <= this->_renderDistance; z++) {
       glm::ivec2 chunk_pos(player_chunk_pos.x + (x * CHUNK_SIZE),
-			   player_chunk_pos.y + (z * CHUNK_SIZE));
+                           player_chunk_pos.y + (z * CHUNK_SIZE));
       glm::ivec2 region_pos((chunk_pos.x >> 8) * (REGION_SIZE * CHUNK_SIZE),
-			    (chunk_pos.y >> 8) * (REGION_SIZE * CHUNK_SIZE));
+                            (chunk_pos.y >> 8) * (REGION_SIZE * CHUNK_SIZE));
       addRegionToQueue(region_pos);
     }
   }
@@ -289,10 +278,12 @@ Color get_best_color(glm::vec3 earth_color) {
 
   int best = 1;
   float best_dist = 999999;
-  float moyearth = ( earth_color.x + earth_color.y + earth_color.z) / 3;
+  float moyearth = (earth_color.x + earth_color.y + earth_color.z) / 3;
   for (int i = 0; i < 8; i++) {
-    if (glm::abs(moyearth - ((color[i].x + color[i].y + color[i].z) / 3))< best_dist) {
-      best_dist = glm::abs(moyearth - ((color[i].x + color[i].y + color[i].z) / 3));
+    if (glm::abs(moyearth - ((color[i].x + color[i].y + color[i].z) / 3)) <
+        best_dist) {
+      best_dist =
+          glm::abs(moyearth - ((color[i].x + color[i].y + color[i].z) / 3));
       best = i;
     }
   }
@@ -305,34 +296,33 @@ void ChunkManager::Draw_earth(glm::vec3 pos, int size, glm::vec3 rot) {
   stbi_set_flip_vertically_on_load(1);
   stbi_uc* pixels =
       stbi_load("./textures/earth.jpg", &w, &h, &texChannels, STBI_rgb_alpha);
-  if(!pixels)
-	  return;
+  if (!pixels) return;
   for (int x = -size + pos.x; x < size + pos.x; x++) {
     for (int y = -size + pos.y; y < size + pos.y; y++) {
-      for (int z = -size +pos.z; z < size + pos.z; z++) {
-	glm::vec3 normal(x - pos.x + 0.5, y - pos.y + 0.5, z + 0.5 - pos.z);
-	normal = glm::normalize(normal);
-	glm::mat4 transformm = glm::eulerAngleYXZ(rot.y, rot.x, rot.z);
-	normal = transformm * glm::vec4(normal, 1.0);
-	float uu = atan2(normal.z, normal.x);
-	float vv = asin(normal.y);
-	int u = mapp(uu, 0, w, -M_PI, M_PI);
-	int v = mapp(vv, 0, h, -(M_PI / 2.0), M_PI / 2.0);
-	glm::vec3 color(pixels[(v * w + u) * 4], pixels[(v * w + u + 1) * 4],
-			pixels[(v * w + u + 2) * 4]);
-	int idmax = 0;
-	float mindist = 9999;
-	int arr[5] = {130, 162, 194, 178, 178};
-	if (glm::distance(glm::vec3(x, y, z), pos) < size &&
-	    glm::distance(glm::vec3(x, y, z), pos) > size  - 1) {
-	  Block block(Material::Grey);
-	  Color c = get_best_color(color);
-	  block.material = get_material_color(c);
-	  set_block(block, glm::ivec3(x, y, z));
+      for (int z = -size + pos.z; z < size + pos.z; z++) {
+        glm::vec3 normal(x - pos.x + 0.5, y - pos.y + 0.5, z + 0.5 - pos.z);
+        normal = glm::normalize(normal);
+        glm::mat4 transformm = glm::eulerAngleYXZ(rot.y, rot.x, rot.z);
+        normal = transformm * glm::vec4(normal, 1.0);
+        float uu = atan2(normal.z, normal.x);
+        float vv = asin(normal.y);
+        int u = mapp(uu, 0, w, -M_PI, M_PI);
+        int v = mapp(vv, 0, h, -(M_PI / 2.0), M_PI / 2.0);
+        glm::vec3 color(pixels[(v * w + u) * 4], pixels[(v * w + u + 1) * 4],
+                        pixels[(v * w + u + 2) * 4]);
+        int idmax = 0;
+        float mindist = 9999;
+        int arr[5] = {130, 162, 194, 178, 178};
+        if (glm::distance(glm::vec3(x, y, z), pos) < size &&
+            glm::distance(glm::vec3(x, y, z), pos) > size - 1) {
+          Block block(Material::Grey);
+          Color c = get_best_color(color);
+          block.material = get_material_color(c);
+          set_block(block, glm::ivec3(x, y, z));
 
-	} else {
-	  set_block(Block(Material::Air), glm::ivec3(x, y, z));
-	}
+        } else {
+          set_block(Block(Material::Air), glm::ivec3(x, y, z));
+        }
       }
     }
   }
@@ -348,8 +338,8 @@ void ChunkManager::addRegionToQueue(glm::ivec2 region_pos) {
 
 std::string ChunkManager::getRegionFilename(glm::ivec2 pos) {
   std::string filename = "world/" + std::to_string(_seed) + "/r." +
-			 std::to_string(pos.x / REGION_SIZE) + "." +
-			 std::to_string(pos.y / REGION_SIZE) + ".vox";
+                         std::to_string(pos.x / REGION_SIZE) + "." +
+                         std::to_string(pos.y / REGION_SIZE) + ".vox";
   return (filename);
 }
 
@@ -373,34 +363,34 @@ void ChunkManager::loadRegion(glm::ivec2 region_pos) {
     int file_offset = REGION_LOOKUPTABLE_SIZE;
     for (int y = 0; y < REGION_SIZE; y++) {
       for (int x = 0; x < REGION_SIZE; x++) {
-	int lookup_offset = 3 * (x + y * REGION_SIZE);
-	unsigned int content_size =
-	    ((unsigned int)(lookup[lookup_offset + 0]) << 16) |
-	    ((unsigned int)(lookup[lookup_offset + 1]) << 8) |
-	    ((unsigned int)(lookup[lookup_offset + 2]));
+        int lookup_offset = 3 * (x + y * REGION_SIZE);
+        unsigned int content_size =
+            ((unsigned int)(lookup[lookup_offset + 0]) << 16) |
+            ((unsigned int)(lookup[lookup_offset + 1]) << 8) |
+            ((unsigned int)(lookup[lookup_offset + 2]));
 
-	glm::ivec2 chunk_position = glm::ivec2(region_pos.x + (x * CHUNK_SIZE),
-					       region_pos.y + (y * CHUNK_SIZE));
-	auto emplace_res = _chunks.emplace(
-	    chunk_position, Chunk({chunk_position.x, 0, chunk_position.y}));
-	auto chunk_it = emplace_res.first;
-	if (content_size != 0) {
-	  // Chunk already generated and saved on disk, just decode and mesh
-	  // it back
-	  if (filesize < file_offset + content_size) {
-	    fclose(region);
-	    return;
-	  }
-	  fseek(region, file_offset, SEEK_SET);
-	  fread(chunk_rle, content_size, 1, region);
-	  io::decodeRLE(chunk_rle, content_size, chunk_it->second.data,
-			(CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT));
-	  chunk_it->second.generated = true;
-	  this->to_mesh.push_back(chunk_it->first);
-	} else {
-	  this->to_generate.push_back(chunk_it->first);
-	}
-	file_offset += content_size;
+        glm::ivec2 chunk_position = glm::ivec2(region_pos.x + (x * CHUNK_SIZE),
+                                               region_pos.y + (y * CHUNK_SIZE));
+        auto emplace_res = _chunks.emplace(
+            chunk_position, Chunk({chunk_position.x, 0, chunk_position.y}));
+        auto chunk_it = emplace_res.first;
+        if (content_size != 0) {
+          // Chunk already generated and saved on disk, just decode and mesh
+          // it back
+          if (filesize < file_offset + content_size) {
+            fclose(region);
+            return;
+          }
+          fseek(region, file_offset, SEEK_SET);
+          fread(chunk_rle, content_size, 1, region);
+          io::decodeRLE(chunk_rle, content_size, chunk_it->second.data,
+                        (CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT));
+          chunk_it->second.generated = true;
+          this->to_mesh.push_back(chunk_it->first);
+        } else {
+          this->to_generate.push_back(chunk_it->first);
+        }
+        file_offset += content_size;
       }
     }
     fclose(region);
@@ -438,29 +428,29 @@ void ChunkManager::unloadRegion(glm::ivec2 region_pos) {
     int file_offset = REGION_LOOKUPTABLE_SIZE;
     for (int y = 0; y < REGION_SIZE; y++) {
       for (int x = 0; x < REGION_SIZE; x++) {
-	int lookup_offset = 3 * (x + y * REGION_SIZE);
-	unsigned int content_size = 0;
+        int lookup_offset = 3 * (x + y * REGION_SIZE);
+        unsigned int content_size = 0;
 
-	glm::ivec2 chunk_position = glm::ivec2(region_pos.x + (x * CHUNK_SIZE),
-					       region_pos.y + (y * CHUNK_SIZE));
-	auto chunk_it = _chunks.find(chunk_position);
-	if (chunk_it != _chunks.end()) {
-	  if (chunk_it->second.generated) {
-	    std::memset(chunk_rle, 0,
-			(CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT) * 2);
-	    unsigned int len_rle = static_cast<unsigned int>(
-		io::encodeRLE(chunk_it->second.data, chunk_rle));
-	    lookup[lookup_offset + 0] = (len_rle & 0xff0000) >> 16;
-	    lookup[lookup_offset + 1] = (len_rle & 0xff00) >> 8;
-	    lookup[lookup_offset + 2] = (len_rle & 0xff);
-	    content_size = len_rle;
-	    fseek(region, file_offset, SEEK_SET);
-	    fwrite(chunk_rle, len_rle, 1, region);
-	  }
-	  eraseUnloadedChunk(chunk_it->first);
-	  _chunks.erase(chunk_it);
-	}
-	file_offset += content_size;
+        glm::ivec2 chunk_position = glm::ivec2(region_pos.x + (x * CHUNK_SIZE),
+                                               region_pos.y + (y * CHUNK_SIZE));
+        auto chunk_it = _chunks.find(chunk_position);
+        if (chunk_it != _chunks.end()) {
+          if (chunk_it->second.generated) {
+            std::memset(chunk_rle, 0,
+                        (CHUNK_SIZE * CHUNK_SIZE * CHUNK_HEIGHT) * 2);
+            unsigned int len_rle = static_cast<unsigned int>(
+                io::encodeRLE(chunk_it->second.data, chunk_rle));
+            lookup[lookup_offset + 0] = (len_rle & 0xff0000) >> 16;
+            lookup[lookup_offset + 1] = (len_rle & 0xff00) >> 8;
+            lookup[lookup_offset + 2] = (len_rle & 0xff);
+            content_size = len_rle;
+            fseek(region, file_offset, SEEK_SET);
+            fwrite(chunk_rle, len_rle, 1, region);
+          }
+          eraseUnloadedChunk(chunk_it->first);
+          _chunks.erase(chunk_it);
+        }
+        file_offset += content_size;
       }
     }
     fseek(region, 0, SEEK_SET);
@@ -475,7 +465,7 @@ void ChunkManager::unloadRegions(glm::ivec2 current_chunk_pos) {
   while (chunk_it != _chunks.end()) {
     glm::ivec2 chunk_pos(chunk_it->first);
     glm::ivec2 region_pos((chunk_pos.x >> 8) * (REGION_SIZE * CHUNK_SIZE),
-			  (chunk_pos.y >> 8) * (REGION_SIZE * CHUNK_SIZE));
+                          (chunk_pos.y >> 8) * (REGION_SIZE * CHUNK_SIZE));
     regions.insert(region_pos);
     chunk_it++;
   }
@@ -483,22 +473,22 @@ void ChunkManager::unloadRegions(glm::ivec2 current_chunk_pos) {
     for (auto region : regions) {
       glm::ivec2 region_center = region + ((REGION_SIZE * CHUNK_SIZE) / 2);
       float dist = fabs(glm::distance(glm::vec2(current_chunk_pos),
-				      glm::vec2(region_center)));
+                                      glm::vec2(region_center)));
       if (round(dist) / CHUNK_SIZE >
-	  static_cast<float>(this->_renderDistance + (REGION_SIZE + 1))) {
-	to_unload.push_back(region);
+          static_cast<float>(this->_renderDistance + (REGION_SIZE + 1))) {
+        to_unload.push_back(region);
       }
     }
   }
 }
 
 void ChunkManager::setRenderAttributes(Renderer& renderer,
-				       glm::vec3 player_pos) {
+                                       glm::vec3 player_pos) {
   glm::ivec2 pos =
       glm::ivec2((static_cast<int>(round(player_pos.x)) -
-		  (static_cast<int>(round(player_pos.x)) % CHUNK_SIZE)),
-		 (static_cast<int>(round(player_pos.z)) -
-		  (static_cast<int>(round(player_pos.z)) % CHUNK_SIZE)));
+                  (static_cast<int>(round(player_pos.x)) % CHUNK_SIZE)),
+                 (static_cast<int>(round(player_pos.z)) -
+                  (static_cast<int>(round(player_pos.z)) % CHUNK_SIZE)));
   frustrum_culling.updateViewPlanes(renderer.uniforms.view_proj);
 
   _debug_chunks_rendered = 0;
@@ -507,11 +497,11 @@ void ChunkManager::setRenderAttributes(Renderer& renderer,
     glm::ivec3 c_pos = chunk_it->second.get_pos();
     float dist = glm::distance(glm::vec2(c_pos.x, c_pos.z), glm::vec2(pos));
     if (round(dist) / CHUNK_SIZE <
-	static_cast<float>(this->_renderDistance + 1)) {
+        static_cast<float>(this->_renderDistance + 1)) {
       if (frustrum_culling.cull(chunk_it->second.aabb_center,
-				chunk_it->second.aabb_halfsize)) {
-	renderer.addRenderAttrib(chunk_it->second.getRenderAttrib());
-	_debug_chunks_rendered++;
+                                chunk_it->second.aabb_halfsize)) {
+        renderer.addRenderAttrib(chunk_it->second.getRenderAttrib());
+        _debug_chunks_rendered++;
       }
     }
     chunk_it++;
@@ -556,15 +546,13 @@ void ChunkManager::set_block(Block block, glm::ivec3 index) {
     block_pos.x = index.x - chunk_pos.x;
     block_pos.y = index.y;
     block_pos.z = index.z - chunk_pos.y;
-    if (_meshing_type == MeshingType::Greedy) {
-      chunk_it->second.forceFullRemesh();
-    }
+    chunk_it->second.forceFullRemesh();
     chunk_it->second.set_block(block, block_pos);
     bool found = false;
     for (int i = 0; i < to_update.size(); i++) {
       if (to_update[i] == chunk_it->first) {
-	found = true;
-	break;
+        found = true;
+        break;
       }
     }
     if (found == false) {
@@ -578,7 +566,7 @@ inline float intbound(float pos, float ds) {
 }
 
 struct HitInfo ChunkManager::rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos,
-				     float max_dist) {
+                                     float max_dist) {
   // http://www.cse.chalmers.se/edu/year/2011/course/TDA361/grid.pdf
   glm::ivec3 pos = glm::floor(ray_pos);
   struct HitInfo info = {};
@@ -606,31 +594,31 @@ struct HitInfo ChunkManager::rayCast(glm::vec3 ray_dir, glm::vec3 ray_pos,
     }
     if (tMax.x < tMax.y) {
       if (tMax.x < tMax.z) {
-	if (tMax.x > max_dist) break;
-	pos.x += step.x;
-	info.pos = pos;
-	last_step = "x";
-	tMax.x += delta.x;
+        if (tMax.x > max_dist) break;
+        pos.x += step.x;
+        info.pos = pos;
+        last_step = "x";
+        tMax.x += delta.x;
       } else {
-	if (tMax.z > max_dist) break;
-	pos.z += step.z;
-	info.pos = pos;
-	last_step = "z";
-	tMax.z += delta.z;
+        if (tMax.z > max_dist) break;
+        pos.z += step.z;
+        info.pos = pos;
+        last_step = "z";
+        tMax.z += delta.z;
       }
     } else {
       if (tMax.y < tMax.z) {
-	if (tMax.y > max_dist) break;
-	pos.y += step.y;
-	info.pos = pos;
-	tMax.y += delta.y;
-	last_step = "y";
+        if (tMax.y > max_dist) break;
+        pos.y += step.y;
+        info.pos = pos;
+        tMax.y += delta.y;
+        last_step = "y";
       } else {
-	if (tMax.z > max_dist) break;
-	last_step = "z";
-	pos.z += step.z;
-	info.pos = pos;
-	tMax.z += delta.z;
+        if (tMax.z > max_dist) break;
+        last_step = "z";
+        pos.z += step.z;
+        info.pos = pos;
+        tMax.z += delta.z;
       }
     }
     block = get_block(pos);
@@ -654,11 +642,6 @@ void ChunkManager::decreaseRenderDistance() {
   if (this->_renderDistance - 1 > 0) this->_renderDistance--;
 }
 
-void ChunkManager::setMeshingType(enum MeshingType type) {
-  _meshing_type = type;
-  reloadMesh();
-}
-
 void ChunkManager::setBlockType(struct Block type) { _current_block = type; }
 
 void ChunkManager::reloadMesh() {
@@ -672,19 +655,19 @@ void ChunkManager::reloadMesh() {
 }
 
 void ChunkManager::print_chunkmanager_info(Renderer& renderer, float fheight,
-					   float fwidth) {
+                                           float fwidth) {
   renderer.renderText(
       10.0f, fheight - 75.0f, 0.35f,
       "chunks: " + std::to_string(_chunks.size()) +
-	  ", rendered: " + std::to_string(_debug_chunks_rendered),
+          ", rendered: " + std::to_string(_debug_chunks_rendered),
       glm::vec3(1.0f, 1.0f, 1.0f));
   renderer.renderText(10.0f, fheight - 100.0f, 0.35f,
-		      "queue: mesh(" + std::to_string(to_mesh.size()) +
-			  ") priority(" + std::to_string(to_update.size()) +
-			  ") generate(" + std::to_string(to_generate.size()) +
-			  ") unload(" + std::to_string(to_unload.size()) + ")",
-		      glm::vec3(1.0f, 1.0f, 1.0f));
+                      "queue: mesh(" + std::to_string(to_mesh.size()) +
+                          ") priority(" + std::to_string(to_update.size()) +
+                          ") generate(" + std::to_string(to_generate.size()) +
+                          ") unload(" + std::to_string(to_unload.size()) + ")",
+                      glm::vec3(1.0f, 1.0f, 1.0f));
   renderer.renderText(10.0f, fheight - 125.0f, 0.35f,
-		      "render distance: " + std::to_string(_renderDistance),
-		      glm::vec3(1.0f, 1.0f, 1.0f));
+                      "render distance: " + std::to_string(_renderDistance),
+                      glm::vec3(1.0f, 1.0f, 1.0f));
 }

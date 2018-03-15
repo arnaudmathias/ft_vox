@@ -26,8 +26,6 @@ struct ivec2Comparator {
   }
 };
 
-enum class MeshingType : unsigned int { Culling, Greedy };
-
 class Chunk {
  public:
   Chunk(glm::ivec3 pos);
@@ -41,7 +39,7 @@ class Chunk {
   glm::vec3 aabb_halfsize;
   bool dirty[CHUNK_HEIGHT / MODEL_HEIGHT] = {true};  // is Remesh needed ?
 
-  void mesh(enum MeshingType meshing_type);
+  void mesh();
   void generate();
 
   inline Block get_block(glm::ivec3 index);
@@ -77,7 +75,6 @@ class ChunkManager {
                                float window_width);
   void increaseRenderDistance();
   void decreaseRenderDistance();
-  void setMeshingType(enum MeshingType type);
   void setBlockType(struct Block type);
   void reloadMesh();
   void set_block(Block block, glm::ivec3 index);
@@ -104,6 +101,5 @@ class ChunkManager {
   FrustrumCulling frustrum_culling;
   uint32_t _seed;
   size_t _debug_chunks_rendered;
-  enum MeshingType _meshing_type;
   struct Block _current_block;
 };
